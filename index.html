@@ -96,8 +96,7 @@
       <button data-mg="bowling"><span class="ico">🎳</span>Bolos</button>
       <button data-mg="archery"><span class="ico">🏹</span>Arco</button>
       <button data-mg="quiz"><span class="ico">🔐</span>Quiz</button>
-      <button data-mg="parchis"><span class="ico">🎲</span>Parchís</button>
-      <button data-mg="snakes"><span class="ico">🪜</span>Escaleras</button>
+      <button data-mg="magic" style="grid-column:1 / -1"><span class="ico">🪜</span>Escalera mágica</button>
     </div>
     <button class="ghost" id="btnReset">Reiniciar progreso</button>
     <div class="badges" id="welcomeBadges"></div>
@@ -163,7 +162,12 @@ const STATION_TOTAL = 4, STATION_NEED = 3;
 const STEP = 1000/60;
 const SAVE_KEY = 'misionMultiplica';
 const MG_TYPES = ['soccer', 'bowling', 'archery', 'quiz'];
-const STATION_TYPES = ['soccer', 'bowling', 'archery', 'quiz', 'parchis', 'snakes'];
+const STATION_TYPES = ['soccer', 'bowling', 'archery', 'quiz', 'magic'];
+
+/* Tiempos de feedback (en frames a 60fps) */
+const FEEDBACK_OK = 100;    // 1.7s para leer "¡Correcto!"
+const FEEDBACK_KO = 220;    // 3.7s para leer respuesta + pista
+const SKIP_AFTER = 40;      // 0.7s mínimo antes de poder saltar
 
 /* =========================================================
    2. NIVELES
@@ -301,8 +305,7 @@ const BADGES = [
   {id:'soccer',  icon:'⚽', name:'Goleador'},
   {id:'bowling', icon:'🎳', name:'Pleno al diez'},
   {id:'archery', icon:'🏹', name:'Ojo de halcón'},
-  {id:'parchis', icon:'🎲', name:'Campeón del tablero'},
-  {id:'snakes',  icon:'🪜', name:'Rey de las escaleras'}
+  {id:'magic',   icon:'🪜', name:'Escalador mágico'}
 ];
 
 /* =========================================================
@@ -414,10 +417,8 @@ function sfx(name){
     case 'strike':  [1046,1568,2093].forEach((f,i)=>tone(f,0.14,'triangle',0.10,i*0.10)); break;
     case 'arrow':   tone(880,0.10,'sine',0.06); tone(1320,0.10,'sine',0.04,0.08); break;
     case 'bullseye':[523,1046,1568,2093].forEach((f,i)=>tone(f,0.15,'sine',0.10,i*0.10)); break;
-    case 'dice':    tone(600,0.05,'square',0.06); tone(800,0.05,'square',0.05,0.05); break;
     case 'step':    tone(520,0.04,'square',0.05); break;
     case 'ladder':  [400,600,800,1200].forEach((f,i)=>tone(f,0.10,'sine',0.10,i*0.08)); break;
-    case 'snake':   [800,600,400,300].forEach((f,i)=>tone(f,0.10,'sawtooth',0.08,i*0.10)); break;
     case 'end':     [523,440,349].forEach((f,i)=>tone(f,0.30,'triangle',0.11,i*0.15)); break;
   }
 }
@@ -532,8 +533,7 @@ function getMiniGameTitle(t){
   if(t === 'soccer')  return '⚽ ¡Penalti matemático!';
   if(t === 'bowling') return '🎳 ¡Bolos numéricos!';
   if(t === 'archery') return '🏹 ¡Tiro con arco!';
-  if(t === 'parchis') return '🎲 ¡Parchís de tablas!';
-  if(t === 'snakes')  return '🪜 ¡Escaleras y serpientes!';
+  if(t === 'magic')   return '🪜 ¡Escalera mágica!';
   return '🔐 ¡Portal matemático!';
 }
 
@@ -550,8 +550,8 @@ function startMiniGame(opts){
   miniGame.questions = [];
   game.mode = 'minigame';
 
-  if(miniGame.type === 'parchis' || miniGame.type === 'snakes'){
-    initBoardGame(miniGame.type);
+  if(miniGame.type === 'magic'){
+    initMagic();
   } else {
     for(let i=0;i<miniGame.totalQuestions;i++) miniGame.questions.push(makeQuestion());
     initMiniGameStage();
@@ -604,7 +604,7 @@ function initMiniGameStage(){
 
 function updateMiniGame(){
   if(!miniGame.active) return;
-  if(miniGame.type === 'parchis' || miniGame.type === 'snakes'){ updateBoardGame(); return; }
+  if(miniGame.type === 'magic'){ updateMagic(); return; }
 
   miniGame.timer++;
   if(miniGame.phase === 'flying'){
@@ -649,7 +649,8 @@ function updateMiniGame(){
       miniGame.phase = 'result'; miniGame.timer = 0;
     }
   } else if(miniGame.phase === 'result'){
-    if(miniGame.timer > 90){
+    const limit = miniGame.isCorrect ? FEEDBACK_OK : FEEDBACK_KO;
+    if(miniGame.timer > limit){
       miniGame.currentIdx++;
       if(miniGame.correctCount >= miniGame.requiredCorrect) finishMiniGame(true);
       else if(miniGame.currentIdx >= miniGame.totalQuestions) finishMiniGame(false);
@@ -659,14 +660,29 @@ function updateMiniGame(){
 }
 
 function handleMiniGameTap(x, y){
-  if(miniGame.type === 'parchis' || miniGame.type === 'snakes'){ handleBoardGameTap(x, y); return; }
+  if(miniGame.type === 'magic'){ handleMagicTap(x, y); return; }
+  if(miniGame.phase === 'result' && miniGame.timer > SKIP_AFTER){
+    // saltar feedback
+    miniGame.currentIdx++;
+    if(miniGame.correctCount >= miniGame.requiredCorrect) finishMiniGame(true);
+    else if(miniGame.currentIdx >= miniGame.totalQuestions) finishMiniGame(false);
+    else initMiniGameStage();
+    return;
+  }
   if(miniGame.phase !== 'aim') return;
   const el = getTappedElement(x, y);
   if(!el) return;
   selectMiniGameElement(el);
 }
 function handleMiniGameKey(n){
-  if(miniGame.type === 'parchis' || miniGame.type === 'snakes'){ handleBoardGameKey(n); return; }
+  if(miniGame.type === 'magic'){ handleMagicKey(n); return; }
+  if(miniGame.phase === 'result' && miniGame.timer > SKIP_AFTER){
+    miniGame.currentIdx++;
+    if(miniGame.correctCount >= miniGame.requiredCorrect) finishMiniGame(true);
+    else if(miniGame.currentIdx >= miniGame.totalQuestions) finishMiniGame(false);
+    else initMiniGameStage();
+    return;
+  }
   if(miniGame.phase !== 'aim') return;
   if(n < 0 || n >= miniGame.elements.length) return;
   selectMiniGameElement(miniGame.elements[n]);
@@ -762,349 +778,174 @@ function finishMiniGame(success){
 }
 
 /* =========================================================
-   11. TABLEROS (PARCHÍS + ESCALERAS)
+   11. ESCALERA MÁGICA (nuevo mini-juego simple)
    ========================================================= */
-/* Parchís: 20 casillas en serpentina 5x4 */
-const PARCHIS_LAYOUT = [
-  {n:1,  x: 88, y:360, type:'start'},
-  {n:2,  x:220, y:360, type:'question'},
-  {n:3,  x:352, y:360, type:'safe'},
-  {n:4,  x:484, y:360, type:'question'},
-  {n:5,  x:616, y:360, type:'bonus'},
-  {n:6,  x:616, y:270, type:'question'},
-  {n:7,  x:484, y:270, type:'safe'},
-  {n:8,  x:352, y:270, type:'question'},
-  {n:9,  x:220, y:270, type:'safe'},
-  {n:10, x: 88, y:270, type:'bonus'},
-  {n:11, x: 88, y:180, type:'safe'},
-  {n:12, x:220, y:180, type:'question'},
-  {n:13, x:352, y:180, type:'safe'},
-  {n:14, x:484, y:180, type:'question'},
-  {n:15, x:616, y:180, type:'bonus'},
-  {n:16, x:616, y: 90, type:'question'},
-  {n:17, x:484, y: 90, type:'safe'},
-  {n:18, x:352, y: 90, type:'question'},
-  {n:19, x:220, y: 90, type:'safe'},
-  {n:20, x: 88, y: 90, type:'finish'}
-];
-
-/* Escaleras y serpientes: 25 casillas en serpentina 5x5 */
-const SNAKES_LAYOUT = [
-  {n:1,  x: 88, y:336, type:'start'},
-  {n:2,  x:220, y:336, type:'question'},
-  {n:3,  x:352, y:336, type:'ladder', to:9},
-  {n:4,  x:484, y:336, type:'safe'},
-  {n:5,  x:616, y:336, type:'ladder', to:12},
-  {n:6,  x:616, y:272, type:'safe'},
-  {n:7,  x:484, y:272, type:'question'},
-  {n:8,  x:352, y:272, type:'snake', to:2},
-  {n:9,  x:220, y:272, type:'safe'},
-  {n:10, x: 88, y:272, type:'safe'},
-  {n:11, x: 88, y:208, type:'safe'},
-  {n:12, x:220, y:208, type:'safe'},
-  {n:13, x:352, y:208, type:'question'},
-  {n:14, x:484, y:208, type:'safe'},
-  {n:15, x:616, y:208, type:'safe'},
-  {n:16, x:616, y:144, type:'snake', to:10},
-  {n:17, x:484, y:144, type:'question'},
-  {n:18, x:352, y:144, type:'ladder', to:23},
-  {n:19, x:220, y:144, type:'safe'},
-  {n:20, x: 88, y:144, type:'question'},
-  {n:21, x: 88, y: 80, type:'safe'},
-  {n:22, x:220, y: 80, type:'snake', to:15},
-  {n:23, x:352, y: 80, type:'safe'},
-  {n:24, x:484, y: 80, type:'question'},
-  {n:25, x:616, y: 80, type:'finish'}
-];
-
-const BOARD_COLORS = {
-  start:'#4db6e2', question:'#4d6ce2', safe:'#7c8cb8',
-  bonus:'#e2b64d', finish:'#e24d9f', ladder:'#4dbf4d', snake:'#d94d4d'
+const magic = {
+  step: 0,          // 0..total (total = win)
+  total: 8,
+  question: null,
+  phase: 'ask',     // 'ask' | 'correct' | 'wrong'
+  timer: 0,
+  tappedIdx: -1,
+  hint: '',
+  buttons: [],
+  steps: [],        // posiciones de los peldaños
+  celebrate: 0
 };
 
-const board = {
-  gameType: 'parchis',
-  total: 20,
-  layout: PARCHIS_LAYOUT,
-  playerPos: 1, rivalPos: 1,
-  turn: 'player', phase: 'roll',
-  diceValue: 0, diceAnim: 0, targetPos: 0,
-  fromPos: 0, step: 0, stepProgress: 0, totalSteps: 0,
-  moveToken: null, question: null, questionTimer: 0,
-  result: null, tappedIdx: -1, feedbackTimer: 0,
-  rivalDelay: 0, winner: null, shownResult: false,
-  logMsg: '',
-  // animación de serpiente/escalera
-  specialAnim: 0, specialFrom: 0, specialTo: 0, specialType: null,
-  questionButtons: []
-};
+function initMagic(){
+  magic.step = 0;
+  magic.total = 8;
+  magic.phase = 'ask';
+  magic.timer = 0;
+  magic.tappedIdx = -1;
+  magic.hint = '';
+  magic.buttons = [];
+  magic.celebrate = 0;
 
-let parchisBgGrad = null;
-function getBoardBgGrad(){
-  if(!parchisBgGrad){
-    parchisBgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    parchisBgGrad.addColorStop(0, '#1a1040');
-    parchisBgGrad.addColorStop(1, '#2a1a5c');
+  // Peldaños: de abajo-izquierda a arriba-derecha
+  magic.steps = [];
+  for(let i=0; i<=magic.total; i++){
+    magic.steps.push({
+      x: 100 + i * 78,
+      y: 250 - i * 18
+    });
   }
-  return parchisBgGrad;
+  magic.question = makeQuestion();
 }
 
-function initBoardGame(gameType){
-  board.gameType = gameType === 'snakes' ? 'snakes' : 'parchis';
-  const cfg = board.gameType === 'snakes' ? SNAKES_LAYOUT : PARCHIS_LAYOUT;
-  board.layout = cfg;
-  board.total = cfg.length;
-  board.playerPos = 1;
-  board.rivalPos = 1;
-  board.turn = 'player';
-  board.phase = 'roll';
-  board.diceValue = 0;
-  board.diceAnim = 0;
-  board.targetPos = 0;
-  board.fromPos = 0;
-  board.step = 0;
-  board.stepProgress = 0;
-  board.totalSteps = 0;
-  board.moveToken = null;
-  board.question = null;
-  board.questionTimer = 0;
-  board.result = null;
-  board.tappedIdx = -1;
-  board.feedbackTimer = 0;
-  board.rivalDelay = 0;
-  board.winner = null;
-  board.shownResult = false;
-  board.specialAnim = 0;
-  board.specialFrom = 0;
-  board.specialTo = 0;
-  board.specialType = null;
-  board.questionButtons = [];
-  board.logMsg = '¡Tu turno! Toca el dado 🎲';
-}
-
-function boardSquareAt(pos){
-  return board.layout[clamp(pos,1,board.total)-1];
-}
-function rollDice(){ return 1 + ((Math.random()*4)|0); } // 1-4
-
-function updateBoardGame(){
-  if(board.phase === 'diceAnim'){
-    board.diceAnim++;
-    if(board.diceAnim < 14){
-      board.diceValue = rollDice();
-    } else if(board.diceAnim === 14){
-      board.diceValue = board.targetPos;
-      sfx('coin');
-    } else if(board.diceAnim > 28){
-      board.phase = 'moveAnim';
-      board.step = 0;
-      board.stepProgress = 0;
-      board.fromPos = board.moveToken === 'player' ? board.playerPos : board.rivalPos;
-      board.targetPos = Math.min(board.total, board.fromPos + board.diceValue);
-      board.totalSteps = board.targetPos - board.fromPos;
+function updateMagic(){
+  if(magic.celebrate > 0){
+    magic.celebrate++;
+    if(magic.celebrate > 45){
+      magic.celebrate = 0;
+      finishMagic(true);
     }
-  } else if(board.phase === 'moveAnim'){
-    board.stepProgress++;
-    if(board.stepProgress >= 10){
-      board.stepProgress = 0;
-      board.step++;
-      const newPos = board.fromPos + board.step;
-      if(board.moveToken === 'player') board.playerPos = newPos;
-      else board.rivalPos = newPos;
-      sfx('step');
-      if(board.step >= board.totalSteps){
-        resolveLanding();
-      }
-    }
-  } else if(board.phase === 'specialAnim'){
-    board.specialAnim++;
-    if(board.specialAnim >= 40){
-      // fin de animación: fijar en destino y terminar
-      if(board.moveToken === 'player') board.playerPos = board.specialTo;
-      else board.rivalPos = board.specialTo;
-      resolveLandingFinal();
-    }
-  } else if(board.phase === 'question'){
-    board.questionTimer++;
-    if(board.moveToken === 'rival' && board.questionTimer > 80){
-      resolveBoardAnswer(Math.random() < 0.6);
-    }
-  } else if(board.phase === 'feedback'){
-    board.feedbackTimer++;
-    if(board.feedbackTimer > 70) nextBoardTurn();
-  } else if(board.phase === 'rivalTurn'){
-    board.rivalDelay++;
-    if(board.rivalDelay > 40){
-      board.moveToken = 'rival';
-      board.targetPos = rollDice();
-      board.diceValue = 1;
-      board.diceAnim = 0;
-      board.phase = 'diceAnim';
-      board.logMsg = 'El rival tira el dado...';
-      sfx('dice');
-    }
-  } else if(board.phase === 'ended' && !board.shownResult){
-    board.shownResult = true;
-    showBoardResult();
-  }
-}
-
-function resolveLanding(){
-  const sq = boardSquareAt(board.targetPos);
-  // Escaleras / serpientes
-  if(sq.type === 'ladder' || sq.type === 'snake'){
-    board.specialFrom = board.targetPos;
-    board.specialTo = sq.to;
-    board.specialType = sq.type;
-    board.specialAnim = 0;
-    board.phase = 'specialAnim';
-    if(sq.type === 'ladder'){ sfx('ladder'); board.logMsg = '🪜 ¡Escalera arriba!'; }
-    else { sfx('snake'); board.logMsg = '🐍 ¡Serpiente abajo!'; }
     return;
   }
-  resolveLandingFinal();
-}
-
-function resolveLandingFinal(){
-  const sq = boardSquareAt(board.targetPos === 0 ? board.playerPos : board.targetPos);
-  // Ahora el targetPos es el final (para el token que se ha movido)
-  const currentPos = board.moveToken === 'player' ? board.playerPos : board.rivalPos;
-  const finalSq = boardSquareAt(currentPos);
-
-  if(finalSq.type === 'question'){
-    board.phase = 'question';
-    board.question = makeQuestion();
-    board.questionTimer = 0;
-    board.result = null;
-    board.tappedIdx = -1;
-    board.logMsg = board.moveToken === 'player'
-      ? '¡Responde para quedarte en la casilla ' + currentPos + '!'
-      : 'El rival está pensando... 🤔';
-  } else if(finalSq.type === 'bonus'){
-    if(board.moveToken === 'player'){
-      state.coins += 5;
-      state.xp += 3;
-      updateHud(); saveState();
-      sfx('coin');
-    }
-    board.logMsg = board.moveToken === 'player' ? '¡Bonus! +5 🪙' : 'El rival cogió un bonus';
-    board.phase = 'feedback';
-    board.feedbackTimer = 0;
-  } else if(finalSq.type === 'finish'){
-    board.winner = board.moveToken;
-    board.phase = 'ended';
-    board.logMsg = board.winner === 'player' ? '¡¡HAS GANADO!!' : 'El rival llegó primero';
-    sfx(board.winner === 'player' ? 'win' : 'end');
-  } else {
-    board.phase = 'feedback';
-    board.feedbackTimer = 0;
-    board.logMsg = board.moveToken === 'player' ? 'Casilla segura ✅' : 'El rival avanzó';
-  }
-}
-
-function resolveBoardAnswer(correct){
-  const key = board.question.a + 'x' + board.question.b;
-  if(board.moveToken === 'player'){
-    const st = state.facts[key] || (state.facts[key] = {c:0, w:0});
-    if(correct){
-      st.c++; state.correct++; state.streak++;
-      if(state.streak > state.bestStreak) state.bestStreak = state.streak;
-      state.xp += 8; state.coins += 2;
-      sfx('correct');
-      board.logMsg = '¡Correcto! Sigues en ' + board.playerPos;
-    } else {
-      st.w++; state.wrong++; state.streak = 0;
-      sfx('wrong');
-      board.playerPos = Math.max(1, board.playerPos - 1);
-      board.logMsg = 'Fallaste → retrocedes a ' + board.playerPos;
-    }
-    checkBadges(); saveState(); updateHud();
-  } else {
-    if(correct){
-      board.logMsg = 'El rival acertó';
-    } else {
-      board.rivalPos = Math.max(1, board.rivalPos - 1);
-      board.logMsg = 'El rival falló';
+  if(magic.phase === 'correct'){
+    magic.timer++;
+    if(magic.timer > FEEDBACK_OK){
+      if(magic.step >= magic.total){
+        // ¡Victoria!
+        magic.celebrate = 1;
+        burst(700, 120, 40, '#ffd45c', 5);
+        sfx('win');
+        return;
+      }
+      magic.step++;
+      magic.phase = 'ask';
+      magic.timer = 0;
+      magic.tappedIdx = -1;
+      magic.hint = '';
+      magic.question = makeQuestion();
+      sfx('ladder');
+      burst(magic.steps[magic.step].x, magic.steps[magic.step].y, 10, '#8effb0', 3);
     }
   }
-  board.result = correct ? 'correct' : 'wrong';
-  board.phase = 'feedback';
-  board.feedbackTimer = 0;
+  // 'wrong' no auto-avanza: el jugador debe tocar la respuesta correcta
 }
 
-function nextBoardTurn(){
-  board.result = null;
-  board.tappedIdx = -1;
-  if(board.turn === 'player'){
-    board.turn = 'rival';
-    board.moveToken = 'rival';
-    board.phase = 'rivalTurn';
-    board.rivalDelay = 0;
-    board.logMsg = 'Turno del rival';
-  } else {
-    board.turn = 'player';
-    board.moveToken = 'player';
-    board.phase = 'roll';
-    board.diceValue = 0;
-    board.logMsg = '¡Tu turno! Toca el dado 🎲';
-  }
-}
-
-function handleBoardGameTap(x, y){
-  if(board.phase === 'roll' && board.turn === 'player'){
-    const dx = x - DICE_X, dy = y - DICE_Y;
-    if(dx*dx + dy*dy <= 40*40){
-      board.moveToken = 'player';
-      board.targetPos = rollDice();
-      board.diceValue = 1;
-      board.diceAnim = 0;
-      board.phase = 'diceAnim';
-      board.logMsg = 'Tirando...';
-      sfx('dice');
+function handleMagicTap(x, y){
+  if(magic.phase === 'correct' && magic.timer > SKIP_AFTER){
+    // saltar feedback correcto
+    if(magic.step >= magic.total){
+      magic.celebrate = 1;
+      burst(700, 120, 40, '#ffd45c', 5);
+      sfx('win');
       return;
     }
+    magic.step++;
+    magic.phase = 'ask';
+    magic.timer = 0;
+    magic.tappedIdx = -1;
+    magic.hint = '';
+    magic.question = makeQuestion();
+    return;
   }
-  if(board.phase === 'question' && board.moveToken === 'player' && !board.result){
-    for(let i=0;i<board.questionButtons.length;i++){
-      const b = board.questionButtons[i];
+  if(magic.phase === 'ask' || magic.phase === 'wrong'){
+    const btns = magicButtons();
+    for(let i=0; i<btns.length; i++){
+      const b = btns[i];
       if(x >= b.x && x <= b.x+b.w && y >= b.y && y <= b.y+b.h){
-        board.tappedIdx = i;
-        resolveBoardAnswer(b.val === board.question.ans);
+        answerMagic(i, b.val);
         return;
       }
     }
   }
 }
-function handleBoardGameKey(n){
-  if(board.phase === 'roll' && board.turn === 'player'){ handleBoardGameTap(DICE_X, DICE_Y); return; }
-  if(board.phase === 'question' && board.moveToken === 'player' && !board.result && n < board.questionButtons.length){
-    board.tappedIdx = n;
-    const b = board.questionButtons[n];
-    resolveBoardAnswer(b.val === board.question.ans);
+
+function handleMagicKey(n){
+  if(magic.phase === 'correct' && magic.timer > SKIP_AFTER){
+    handleMagicTap(-1, -1);
+    return;
+  }
+  const btns = magicButtons();
+  if(n >= 0 && n < btns.length){
+    answerMagic(n, btns[n].val);
   }
 }
 
-function showBoardResult(){
-  const title = $('mgTitle'), body = $('mgBody'), retry = $('mgRetry'), cont = $('mgContinue');
-  if(board.winner === 'player'){
-    state.xp += 20;
-    state.coins += 10;
-    award(board.gameType === 'snakes' ? 'snakes' : 'parchis');
-    saveState(); updateHud();
-    title.textContent = '🏆 ¡Ganaste la carrera!';
-    body.innerHTML =
-      '<p>¡Has llegado a la meta antes que el rival!</p>' +
-      '<p>⭐ +20 XP · 🪙 +10 monedas</p>';
+function answerMagic(idx, val){
+  if(magic.phase === 'correct') return;
+  const q = magic.question;
+  magic.tappedIdx = idx;
+  const correct = (val === q.ans);
+
+  if(correct){
+    magic.phase = 'correct';
+    magic.timer = 0;
+    magic.hint = '';
+    const key = q.a + 'x' + q.b;
+    const st = state.facts[key] || (state.facts[key] = {c:0, w:0});
+    st.c++; state.correct++; state.streak++;
+    if(state.streak > state.bestStreak) state.bestStreak = state.streak;
+    state.xp += 5; state.coins += 2;
+    checkBadges(); saveState(); updateHud();
+    sfx('correct');
   } else {
-    state.xp += 5; saveState(); updateHud();
-    title.textContent = '😢 El rival ganó';
-    body.innerHTML =
-      '<p>El rival llegó primero. ¡La próxima será tuya!</p>' +
-      '<p>⭐ +5 XP por participar</p>';
+    magic.phase = 'wrong';
+    const key = q.a + 'x' + q.b;
+    const st = state.facts[key] || (state.facts[key] = {c:0, w:0});
+    st.w++; state.wrong++; state.streak = 0;
+    saveState(); updateHud();
+    sfx('wrong');
+    magic.hint = 'La respuesta es ' + q.ans + '  ·  ' + hintText(q.a, q.b);
   }
-  retry.style.display = 'block';
-  retry.textContent = '🎲 Jugar otra vez';
-  cont.textContent = 'Volver';
+}
+
+function magicButtons(){
+  // 4 botones en 2x2 en la parte inferior
+  const bw = 300, bh = 62;
+  return [
+    {x: 60,  y: 300, w: bw, h: bh, val: magic.question.choices[0]},
+    {x: 440, y: 300, w: bw, h: bh, val: magic.question.choices[1]},
+    {x: 60,  y: 375, w: bw, h: bh, val: magic.question.choices[2]},
+    {x: 440, y: 375, w: bw, h: bh, val: magic.question.choices[3]}
+  ];
+}
+
+function finishMagic(success){
+  miniGame.phase = 'summary';
+  const title = $('mgTitle'), body = $('mgBody'), retry = $('mgRetry'), cont = $('mgContinue');
+  if(success){
+    award('magic');
+    state.xp += 20;
+    state.coins += 8;
+    saveState(); updateHud();
+    title.textContent = '🏆 ¡Has llegado arriba!';
+    body.innerHTML =
+      '<p>¡Has subido los <b>' + magic.total + '</b> peldaños!</p>' +
+      '<p>⭐ +20 XP · 🪙 +8 monedas</p>';
+    retry.style.display = 'none';
+    cont.textContent = 'Volver';
+  } else {
+    title.textContent = '📘 ¡Casi!';
+    body.innerHTML = '<p>Peldaño <b>' + magic.step + ' de ' + magic.total + '</b></p>';
+    retry.style.display = 'block';
+    retry.textContent = '🔁 Reintentar';
+    cont.textContent = 'Volver';
+  }
   cont.onclick = function(){
     $('ovMinigame').classList.add('hidden');
     miniGame.active = false;
@@ -1118,9 +959,7 @@ function showBoardResult(){
   };
   retry.onclick = function(){
     $('ovMinigame').classList.add('hidden');
-    startMiniGame({
-      mode: miniGame.mode, returnTo: miniGame.returnTo, type: board.gameType
-    });
+    startMiniGame({ mode: miniGame.mode, returnTo: miniGame.returnTo, type: 'magic' });
     lastTime = 0; acc = 0;
   };
   $('ovMinigame').classList.remove('hidden');
@@ -1188,9 +1027,9 @@ function hintText(a, b){
   if(b <= 4){
     const parts = [];
     for(let i=0;i<b;i++) parts.push(a);
-    return b + ' veces ' + a + ' → ' + parts.join(' + ') + ' = ' + (a*b);
+    return b + ' veces ' + a + ' = ' + parts.join(' + ') + ' = ' + (a*b);
   }
-  return a + ' × ' + b + ' = ' + b + ' × ' + a + ' = ' + (a*b);
+  return 'Truco: ' + a + ' × ' + b + ' = ' + b + ' × ' + a + ' = ' + (a*b);
 }
 
 /* =========================================================
@@ -1939,10 +1778,10 @@ function drawCanvasHud(){
 }
 
 /* =========================================================
-   20. RENDER DEL MINI-JUEGO
+   20. RENDER MINI-JUEGOS (4 clásicos)
    ========================================================= */
 function renderMiniGame(){
-  if(miniGame.type === 'parchis' || miniGame.type === 'snakes'){ renderBoardGame(); return; }
+  if(miniGame.type === 'magic'){ renderMagic(); return; }
   const q = miniGame.questions[miniGame.currentIdx];
   if(!q) return;
   if(miniGame.type === 'soccer')       drawMiniGameSoccer(q);
@@ -1950,7 +1789,7 @@ function renderMiniGame(){
   else if(miniGame.type === 'archery') drawMiniGameArchery(q);
   else                                 drawMiniGameQuiz(q);
   drawMiniGameHeader(q);
-  if(miniGame.phase === 'result') drawMiniGameResult();
+  if(miniGame.phase === 'result') drawMiniGameResult(q);
   drawParticles();
 }
 function drawMiniGameHeader(q){
@@ -1976,35 +1815,40 @@ function drawMiniGameHeader(q){
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 }
-function drawMiniGameResult(){
-  const t = Math.min(1, miniGame.timer/20);
-  ctx.globalAlpha = t;
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+function drawMiniGameResult(q){
+  const fadeIn = Math.min(1, miniGame.timer/20);
+  ctx.globalAlpha = fadeIn;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
   ctx.fillRect(0, 0, W, H);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   if(miniGame.isCorrect){
-    const scale = 1 + Math.sin(miniGame.timer*0.2)*0.04;
+    const scale = 1 + Math.sin(miniGame.timer*0.15)*0.04;
     ctx.save();
-    ctx.translate(W/2, H/2-10);
+    ctx.translate(W/2, H/2-20);
     ctx.scale(scale, scale);
-    ctx.fillStyle = '#ffd45c';
+    ctx.fillStyle = '#7dffb0';
     ctx.font = 'bold 52px "Trebuchet MS",sans-serif';
     ctx.fillText(miniGame.resultText, 0, 0);
     ctx.restore();
+    ctx.fillStyle = '#ffd45c';
+    ctx.font = 'bold 22px "Trebuchet MS",sans-serif';
+    ctx.fillText(q.a + ' × ' + q.b + ' = ' + q.ans, W/2, H/2 + 45);
   } else {
     ctx.fillStyle = '#ff9c9c';
-    ctx.font = 'bold 52px "Trebuchet MS",sans-serif';
-    ctx.fillText(miniGame.resultText, W/2, H/2-30);
+    ctx.font = 'bold 46px "Trebuchet MS",sans-serif';
+    ctx.fillText(miniGame.resultText, W/2, H/2 - 40);
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 30px "Trebuchet MS",sans-serif';
-    ctx.fillText(miniGame.resultSub, W/2, H/2+30);
-    const q = miniGame.questions[miniGame.currentIdx];
-    if(q){
-      ctx.fillStyle = '#b9c4f5';
-      ctx.font = '16px "Trebuchet MS",sans-serif';
-      ctx.fillText(hintText(q.a, q.b), W/2, H/2+70);
-    }
+    ctx.font = 'bold 32px "Trebuchet MS",sans-serif';
+    ctx.fillText(q.a + ' × ' + q.b + ' = ' + q.ans, W/2, H/2 + 10);
+    ctx.fillStyle = '#b9c4f5';
+    ctx.font = '16px "Trebuchet MS",sans-serif';
+    ctx.fillText(hintText(q.a, q.b), W/2, H/2 + 55);
+  }
+  if(miniGame.timer > SKIP_AFTER){
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '14px "Trebuchet MS",sans-serif';
+    ctx.fillText('👆 Toca para continuar', W/2, H - 20);
   }
   ctx.globalAlpha = 1;
   ctx.textAlign = 'left';
@@ -2034,7 +1878,7 @@ function drawMiniGameSoccer(){
   for(const el of miniGame.elements){
     let bg = 'rgba(0,0,0,0.5)';
     if(miniGame.phase === 'result' && el.hit){
-      bg = miniGame.isCorrect ? 'rgba(120,255,160,0.55)' : 'rgba(255,120,120,0.55)';
+      bg = miniGame.isCorrect ? 'rgba(120,255,160,0.65)' : 'rgba(255,120,120,0.65)';
     }
     ctx.fillStyle = bg;
     ctx.fillRect(el.x+6, el.y+6, el.w-12, el.h-12);
@@ -2048,7 +1892,7 @@ function drawMiniGameSoccer(){
   if(miniGame.phase !== 'aim' && miniGame.projectilePos){ bx = miniGame.projectilePos.x; by = miniGame.projectilePos.y; }
   drawSoccerBall(bx, by, 16);
   if(miniGame.phase === 'aim'){
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.font = 'bold 16px "Trebuchet MS",sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('👆 Toca la zona con la respuesta correcta', W/2, 260);
@@ -2093,7 +1937,7 @@ function drawMiniGameBowling(){
   if(miniGame.phase !== 'aim' && miniGame.projectilePos){ bx = miniGame.projectilePos.x; by = miniGame.projectilePos.y; }
   drawBowlingBall(bx, by, 18);
   if(miniGame.phase === 'aim'){
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.font = 'bold 16px "Trebuchet MS",sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('👆 Toca el bolo con la respuesta correcta', W/2, 185);
@@ -2237,10 +2081,14 @@ function drawMiniGameQuiz(q){
   }
   for(const el of miniGame.elements){
     let fill = 'rgba(60,80,180,0.85)', stroke = '#8da5ff';
-    // SOLO se colorea el pulsado, y SOLO cuando se ha resuelto
-    if(el.hit && miniGame.phase === 'result'){
+    // marcar SOLO el pulsado, y SOLO tras resolver
+    if(miniGame.phase === 'result' && el.hit){
       if(miniGame.isCorrect){ fill = 'rgba(60,200,120,0.9)'; stroke = '#7dffb0'; }
       else { fill = 'rgba(220,80,80,0.9)'; stroke = '#ff9c9c'; }
+    }
+    // marcar también el correcto en verde si el jugador falló
+    if(miniGame.phase === 'result' && !miniGame.isCorrect && el.val === q.ans && !el.hit){
+      fill = 'rgba(60,200,120,0.7)'; stroke = '#7dffb0';
     }
     ctx.fillStyle = fill;
     rr(el.x, el.y, el.w, el.h, 16); ctx.fill();
@@ -2255,245 +2103,159 @@ function drawMiniGameQuiz(q){
 }
 
 /* =========================================================
-   21. RENDER DEL TABLERO (PARCHÍS + ESCALERAS)
+   21. RENDER ESCALERA MÁGICA
    ========================================================= */
-function renderBoardGame(){
-  ctx.fillStyle = getBoardBgGrad();
-  ctx.fillRect(0, 0, W, H);
+function renderMagic(){
+  // Fondo cielo con estrellas
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#1e1440');
+  g.addColorStop(0.6, '#3d2a7a');
+  g.addColorStop(1, '#5c46a8');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
-  // Camino (líneas)
-  ctx.strokeStyle = 'rgba(255,255,255,0.14)';
-  ctx.lineWidth = 14;
-  ctx.lineCap = 'round';
-  for(let i=0;i<board.layout.length-1;i++){
-    const a = board.layout[i], b = board.layout[i+1];
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  // Estrellas
+  for(let i=0;i<50;i++){
+    const sx = (i * 137 + 30) % W;
+    const sy = (i * 73 + 20) % 280;
+    const tw = 0.5 + 0.5*Math.sin(game.frame*0.04 + i);
+    ctx.globalAlpha = tw;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(sx, sy, 1.2, 0, Math.PI*2); ctx.fill();
   }
-  ctx.lineCap = 'butt';
+  ctx.globalAlpha = 1;
 
-  // Escaleras y serpientes (solo en modo escaleras)
-  if(board.gameType === 'snakes'){
-    for(const sq of board.layout){
-      if(sq.type === 'ladder') drawLadder(sq, boardSquareAt(sq.to));
-      else if(sq.type === 'snake') drawSnake(sq, boardSquareAt(sq.to));
-    }
-  }
-
-  // Casillas
-  const sqW = board.gameType === 'snakes' ? 105 : 108;
-  const sqH = board.gameType === 'snakes' ? 52 : 58;
-  for(const sq of board.layout){
-    const color = BOARD_COLORS[sq.type] || BOARD_COLORS.safe;
-    ctx.fillStyle = color;
-    rr(sq.x - sqW/2, sq.y - sqH/2, sqW, sqH, 10); ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
-    rr(sq.x - sqW/2, sq.y - sqH/2, sqW, sqH, 10); ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 19px "Trebuchet MS",sans-serif';
+  // Peldaños
+  for(let i=0; i<=magic.total; i++){
+    const s = magic.steps[i];
+    // plataforma
+    ctx.fillStyle = i <= magic.step ? '#ffd45c' : '#5a4a9a';
+    rr(s.x - 40, s.y - 6, 80, 14, 5); ctx.fill();
+    // número
+    ctx.fillStyle = i <= magic.step ? '#3a2a00' : '#a8a0d0';
+    ctx.font = 'bold 11px "Trebuchet MS",sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(sq.n, sq.x, sq.y + 2);
-    // Iconos
-    let icon = '';
-    if(sq.type === 'question') icon = '❓';
-    else if(sq.type === 'bonus') icon = '🪙';
-    else if(sq.type === 'finish') icon = '🏁';
-    else if(sq.type === 'start') icon = '🚀';
-    else if(sq.type === 'ladder') icon = '⬆️';
-    else if(sq.type === 'snake') icon = '⬇️';
-    if(icon){
-      ctx.font = '13px "Trebuchet MS",sans-serif';
-      ctx.fillText(icon, sq.x, sq.y - 20);
-    }
+    ctx.fillText(i === 0 ? '🚀' : (i === magic.total ? '🏆' : i), s.x, s.y);
   }
 
-  // Animación especial (escalera/serpiente)
-  if(board.phase === 'specialAnim'){
-    const t = board.specialAnim / 40;
-    const aSq = boardSquareAt(board.specialFrom);
-    const bSq = boardSquareAt(board.specialTo);
-    const animX = aSq.x + (bSq.x - aSq.x) * t;
-    const animY = aSq.y + (bSq.y - aSq.y) * t;
-    ctx.fillStyle = board.specialType === 'ladder' ? '#4dbf4d' : '#d94d4d';
-    ctx.beginPath(); ctx.arc(animX, animY, 14, 0, Math.PI*2); ctx.fill();
+  // Numa (personaje) en el peldaño actual
+  const ps = magic.steps[magic.step];
+  drawMagicNuma(ps.x, ps.y - 6);
+
+  // Flechas de subida (si acierta)
+  if(magic.phase === 'correct' && magic.step < magic.total){
+    const ns = magic.steps[magic.step + 1];
+    ctx.strokeStyle = 'rgba(125,255,176,0.8)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(ps.x, ps.y - 30);
+    ctx.lineTo(ns.x, ns.y - 30);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
-  // Fichas (jugador + bot)
-  const pSq = boardSquareAt(board.playerPos);
-  const rSq = boardSquareAt(board.rivalPos);
-  const same = board.playerPos === board.rivalPos;
-  const pOffX = same ? -20 : 0;
-  const rOffX = same ? 20 : 0;
-
-  // ficha jugador
+  // Header
+  ctx.fillStyle = 'rgba(10,6,30,0.82)';
+  rr(20, 8, W-40, 54, 16); ctx.fill();
+  ctx.strokeStyle = '#ffd45c'; ctx.lineWidth = 2;
+  rr(20, 8, W-40, 54, 16); ctx.stroke();
   ctx.fillStyle = '#ffd45c';
-  ctx.beginPath(); ctx.arc(pSq.x + pOffX, pSq.y + 14, 14, 0, Math.PI*2); ctx.fill();
-  ctx.strokeStyle = '#8b6914'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(pSq.x + pOffX, pSq.y + 14, 14, 0, Math.PI*2); ctx.stroke();
-  ctx.fillStyle = '#8b6914';
-  ctx.font = 'bold 12px "Trebuchet MS",sans-serif';
+  ctx.font = 'bold 26px "Trebuchet MS",sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('TÚ', pSq.x + pOffX, pSq.y + 14);
+  ctx.fillText(magic.question.a + ' × ' + magic.question.b + ' = ?', W/2, 36);
 
-  // ficha bot
-  ctx.fillStyle = '#ff79b7';
-  ctx.beginPath(); ctx.arc(rSq.x + rOffX, rSq.y + 14, 14, 0, Math.PI*2); ctx.fill();
-  ctx.strokeStyle = '#8b1c4a'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(rSq.x + rOffX, rSq.y + 14, 14, 0, Math.PI*2); ctx.stroke();
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 10px "Trebuchet MS",sans-serif';
-  ctx.fillText('BOT', rSq.x + rOffX, rSq.y + 14);
+  // Progreso
+  ctx.fillStyle = 'rgba(10,6,30,0.7)';
+  rr(20, 68, 200, 24, 12); ctx.fill();
+  ctx.fillStyle = '#8fe8c4';
+  ctx.font = 'bold 13px "Trebuchet MS",sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Peldaño ' + magic.step + ' / ' + magic.total, 32, 84);
 
-  // cabecera
-  ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  rr(20, 8, W - 40, 40, 12); ctx.fill();
-  ctx.fillStyle = board.turn === 'player' ? '#ffd45c' : '#ff9c9c';
-  ctx.font = 'bold 18px "Trebuchet MS",sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(board.logMsg, W/2, 28);
+  // Botones de respuesta
+  const btns = magicButtons();
+  for(let i=0; i<btns.length; i++){
+    const b = btns[i];
+    let fill = 'rgba(60,80,180,0.9)';
+    let stroke = '#8da5ff';
+    // Si ya se respondió (correcto o incorrecto)
+    if(magic.tappedIdx === i && magic.phase === 'correct'){
+      fill = 'rgba(60,200,120,0.95)'; stroke = '#7dffb0';
+    } else if(magic.tappedIdx === i && magic.phase === 'wrong'){
+      fill = 'rgba(220,80,80,0.95)'; stroke = '#ff9c9c';
+    } else if(magic.phase === 'wrong' && b.val === magic.question.ans){
+      fill = 'rgba(60,200,120,0.9)'; stroke = '#7dffb0';
+    }
+    ctx.fillStyle = fill;
+    rr(b.x, b.y, b.w, b.h, 16); ctx.fill();
+    ctx.strokeStyle = stroke; ctx.lineWidth = 3;
+    rr(b.x, b.y, b.w, b.h, 16); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 34px "Trebuchet MS",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(b.val, b.x + b.w/2, b.y + b.h/2);
+  }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 
-  // dado
-  drawBoardDice();
-
-  // pregunta
-  const showQ = (board.phase === 'question' || board.phase === 'feedback')
-                 && board.moveToken === 'player' && board.question;
-  if(showQ) drawBoardQuestion();
+  // Feedback
+  if(magic.phase === 'correct'){
+    ctx.fillStyle = 'rgba(10,6,30,0.7)';
+    rr(W/2 - 220, 260, 440, 32, 12); ctx.fill();
+    ctx.fillStyle = '#7dffb0';
+    ctx.font = 'bold 22px "Trebuchet MS",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('¡Correcto! +5 ⭐ +2 🪙', W/2, 276);
+    if(magic.timer > SKIP_AFTER && magic.step < magic.total){
+      ctx.fillStyle = 'rgba(255,255,255,0.65)';
+      ctx.font = '13px "Trebuchet MS",sans-serif';
+      ctx.fillText('👆 Toca para subir', W/2, 300);
+    }
+  } else if(magic.phase === 'wrong'){
+    ctx.fillStyle = 'rgba(10,6,30,0.85)';
+    rr(W/2 - 280, 250, 560, 44, 12); ctx.fill();
+    ctx.fillStyle = '#ff9c9c';
+    ctx.font = 'bold 18px "Trebuchet MS",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(magic.hint, W/2, 272);
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.font = '13px "Trebuchet MS",sans-serif';
+    ctx.fillText('Toca la respuesta correcta para seguir', W/2, 296);
+  }
 
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   drawParticles();
 }
 
-const DICE_X = 740, DICE_Y = 415;
-
-function drawBoardDice(){
+function drawMagicNuma(x, y){
   ctx.save();
-  ctx.translate(DICE_X, DICE_Y);
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
-  ctx.beginPath(); ctx.ellipse(0, 22, 26, 5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.translate(x, y);
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(0, 0, 12, 3.5, 0, 0, Math.PI*2); ctx.fill();
+  // piernas
+  ctx.fillStyle = '#2b3a63';
+  ctx.fillRect(-8, -10, 6, 10);
+  ctx.fillRect(2, -10, 6, 10);
+  // cuerpo
+  const pg = ctx.createLinearGradient(0, -30, 0, 0);
+  pg.addColorStop(0, '#8ef0d0'); pg.addColorStop(1, '#37a98b');
+  ctx.fillStyle = pg;
+  ctx.beginPath(); ctx.ellipse(0, -18, 13, 14, 0, 0, Math.PI*2); ctx.fill();
+  // barriga
+  ctx.fillStyle = '#d9fff4';
+  ctx.beginPath(); ctx.ellipse(0, -14, 7, 8, 0, 0, Math.PI*2); ctx.fill();
+  // ojos
   ctx.fillStyle = '#fff';
-  rr(-20, -20, 40, 40, 8); ctx.fill();
-  ctx.strokeStyle = '#333'; ctx.lineWidth = 3;
-  rr(-20, -20, 40, 40, 8); ctx.stroke();
-  if(board.diceValue > 0){
-    ctx.fillStyle = '#d32f2f';
-    const d = board.diceValue;
-    const dotR = 4.5;
-    const positions = {
-      1: [[0,0]],
-      2: [[-8,-8],[8,8]],
-      3: [[0,-9],[-9,8],[9,8]],
-      4: [[-8,-8],[8,-8],[-8,8],[8,8]]
-    };
-    const dots = positions[d] || positions[1];
-    for(const [dx,dy] of dots){
-      ctx.beginPath(); ctx.arc(dx, dy, dotR, 0, Math.PI*2); ctx.fill();
-    }
-  }
-  if(board.phase === 'roll' && board.turn === 'player'){
-    const pulse = 0.55 + 0.45*Math.sin(game.frame*0.1);
-    ctx.globalAlpha = pulse;
-    ctx.fillStyle = '#ffd45c';
-    ctx.font = 'bold 12px "Trebuchet MS",sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('👆 Toca', 0, 40);
-    ctx.globalAlpha = 1;
-  }
+  ctx.beginPath(); ctx.arc(-4, -22, 3.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 4, -22, 3.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#1b2340';
+  ctx.beginPath(); ctx.arc(-4, -22, 1.8, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 4, -22, 1.8, 0, Math.PI*2); ctx.fill();
+  // antena + estrella
+  ctx.strokeStyle = '#ffd45c'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, -32); ctx.lineTo(0, -38); ctx.stroke();
+  starShape(0, -42, 4, '#ffe98a');
   ctx.restore();
-}
-
-function drawBoardQuestion(){
-  ctx.fillStyle = 'rgba(0,0,0,0.78)';
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#2a1a5c';
-  rr(80, 100, W - 160, 260, 20); ctx.fill();
-  ctx.strokeStyle = '#ffd45c'; ctx.lineWidth = 3;
-  rr(80, 100, W - 160, 260, 20); ctx.stroke();
-
-  ctx.fillStyle = '#ffd45c';
-  ctx.font = 'bold 40px "Trebuchet MS",sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(board.question.a + ' × ' + board.question.b + ' = ?', W/2, 160);
-
-  board.questionButtons = [];
-  const bw = 150, bh = 60;
-  const positions = [{x:130,y:235},{x:520,y:235},{x:130,y:315},{x:520,y:315}];
-  for(let i=0;i<4;i++){
-    const p = positions[i];
-    const val = board.question.choices[i];
-    // SOLO se colorea el pulsado, y SOLO cuando se ha resuelto
-    let fill = '#3b4a8f';
-    if(board.tappedIdx === i && board.result){
-      fill = board.result === 'correct' ? '#3fbf7f' : '#d9534f';
-    }
-    ctx.fillStyle = fill;
-    rr(p.x, p.y, bw, bh, 14); ctx.fill();
-    ctx.strokeStyle = '#ffd45c'; ctx.lineWidth = 2;
-    rr(p.x, p.y, bw, bh, 14); ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 28px "Trebuchet MS",sans-serif';
-    ctx.fillText(val, p.x + bw/2, p.y + bh/2);
-    board.questionButtons.push({x: p.x, y: p.y, w: bw, h: bh, val: val});
-  }
-
-  if(board.result === 'correct'){
-    ctx.fillStyle = '#7dffb0';
-    ctx.font = 'bold 22px "Trebuchet MS",sans-serif';
-    ctx.fillText('¡Correcto! 🎉', W/2, 400);
-  } else if(board.result === 'wrong'){
-    ctx.fillStyle = '#ff9c9c';
-    ctx.font = 'bold 20px "Trebuchet MS",sans-serif';
-    ctx.fillText('Era ' + board.question.ans + ' 💪', W/2, 400);
-    ctx.fillStyle = '#b9c4f5';
-    ctx.font = '14px "Trebuchet MS",sans-serif';
-    ctx.fillText(hintText(board.question.a, board.question.b), W/2, 425);
-  }
-}
-
-/* --- Escaleras y serpientes visuales --- */
-function drawLadder(fromSq, toSq){
-  const x1 = fromSq.x, y1 = fromSq.y, x2 = toSq.x, y2 = toSq.y;
-  const dx = x2 - x1, dy = y2 - y1;
-  const len = Math.sqrt(dx*dx + dy*dy) || 1;
-  const nx = -dy/len * 7, ny = dx/len * 7;
-  ctx.strokeStyle = '#c9a24a';
-  ctx.lineWidth = 5;
-  ctx.beginPath(); ctx.moveTo(x1+nx, y1+ny); ctx.lineTo(x2+nx, y2+ny); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x1-nx, y1-ny); ctx.lineTo(x2-nx, y2-ny); ctx.stroke();
-  ctx.strokeStyle = '#a68032'; ctx.lineWidth = 3;
-  const numRungs = Math.max(3, Math.floor(len / 22));
-  for(let i=1;i<numRungs;i++){
-    const t = i/numRungs;
-    const rx = x1 + dx*t, ry = y1 + dy*t;
-    ctx.beginPath(); ctx.moveTo(rx+nx, ry+ny); ctx.lineTo(rx-nx, ry-ny); ctx.stroke();
-  }
-}
-
-function drawSnake(fromSq, toSq){
-  const x1 = fromSq.x, y1 = fromSq.y, x2 = toSq.x, y2 = toSq.y;
-  const dx = x2 - x1, dy = y2 - y1;
-  const steps = 40;
-  ctx.strokeStyle = '#d94d4d';
-  ctx.lineWidth = 8;
-  ctx.beginPath();
-  for(let i=0;i<=steps;i++){
-    const t = i/steps;
-    const wave = Math.sin(t * Math.PI * 6) * 14;
-    const perpX = -dy, perpY = dx;
-    const plen = Math.sqrt(perpX*perpX + perpY*perpY) || 1;
-    const px = x1 + dx*t + (perpX/plen)*wave;
-    const py = y1 + dy*t + (perpY/plen)*wave;
-    if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-  }
-  ctx.stroke();
-  // cabeza
-  ctx.fillStyle = '#d94d4d';
-  ctx.beginPath(); ctx.arc(x1, y1, 12, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(x1-4, y1-3, 3, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(x1+4, y1-3, 3, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#000';
-  ctx.beginPath(); ctx.arc(x1-4, y1-3, 1.5, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(x1+4, y1-3, 1.5, 0, Math.PI*2); ctx.fill();
 }
 
 /* =========================================================
@@ -2505,7 +2267,7 @@ document.addEventListener('keydown', function(e){
     e.preventDefault();
   }
   if(game.mode === 'minigame'){
-    if(k === ' ' && (miniGame.type === 'parchis' || miniGame.type === 'snakes')){ handleBoardGameKey(0); return; }
+    if(k === ' '){ handleMiniGameKey(-1); return; }
     const n = parseInt(k, 10);
     if(n >= 1 && n <= 4){ handleMiniGameKey(n-1); return; }
     return;
@@ -2607,8 +2369,8 @@ $('practiceGrid').addEventListener('click', function(e){
   initAudio();
   const type = btn.getAttribute('data-mg');
   $('ovWelcome').classList.add('hidden');
-  if(type === 'parchis' || type === 'snakes'){
-    startMiniGame({ mode: 'practice', returnTo: 'welcome', type: type });
+  if(type === 'magic'){
+    startMiniGame({ mode: 'practice', returnTo: 'welcome', type: 'magic' });
   } else {
     startMiniGame({
       mode: 'practice', returnTo: 'welcome', type: type,
