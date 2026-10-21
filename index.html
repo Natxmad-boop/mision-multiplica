@@ -118,16 +118,16 @@
             display: flex;
             gap: 15px;
         }
-        /* Controles Táctiles Móviles */
+        /* Controles Táctiles Móviles (Ubicados más abajo y cómodos) */
         #touch-controls {
             position: absolute;
-            bottom: 0;
+            bottom: 5px;
             left: 0;
             width: 100%;
-            height: 110px;
+            height: 90px;
             display: flex;
             justify-content: space-between;
-            padding: 15px 25px;
+            padding: 5px 20px;
             z-index: 5;
             pointer-events: none;
         }
@@ -137,12 +137,12 @@
             pointer-events: auto;
         }
         .t-btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.6);
+            width: 55px;
+            height: 55px;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             color: white;
             display: flex;
             justify-content: center;
@@ -151,11 +151,11 @@
             touch-action: manipulation;
         }
         .t-btn:active, .t-btn.active {
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.5);
             transform: scale(0.95);
         }
 
-        /* Ventana Modal Matemáticas (Capa Máxima) */
+        /* Ventana Modal Matemáticas */
         #math-modal {
             position: absolute;
             top: 50%;
@@ -167,7 +167,7 @@
             padding: 20px;
             width: 85%;
             max-width: 360px;
-            z-index: 100; /* Prioridad máxima por encima de todo */
+            z-index: 100;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -252,9 +252,9 @@
 
     <!-- Pantalla de Victoria -->
     <div id="screen-victory" class="screen hidden">
-        <h1>¡MUNDO COMPLETADO!</h1>
+        <h1 id="victory-title">¡MUNDO COMPLETADO!</h1>
         <p id="victory-stats">Has recuperado la energía del Bosque de los Unos.</p>
-        <button class="btn" onclick="Game.nextLevel()">Continuar Aventura</button>
+        <button class="btn" onclick="Game.nextLevel()">Siguiente Mundo</button>
     </div>
 
     <!-- Pantalla de Game Over -->
@@ -277,9 +277,7 @@
         <h3 style="color: #e0fbfc;">¡Puerta Numérica!</h3>
         <p style="font-size: 0.9rem; margin-bottom: 5px; color: #a3b18a;">Resuelve para continuar:</p>
         <div id="math-question">3 × 4 = ?</div>
-        <div class="answers-grid" id="math-answers">
-            <!-- Botones inyectados dinámicamente -->
-        </div>
+        <div class="answers-grid" id="math-answers"></div>
     </div>
 </div>
 
@@ -342,7 +340,7 @@ const Sound = {
 
 // --- ALMACENAMIENTO ---
 const Storage = {
-    key: 'mision_multiplica_save_v1',
+    key: 'mision_multiplica_save_v2',
     load() {
         try {
             const data = localStorage.getItem(this.key);
@@ -357,7 +355,7 @@ const Storage = {
     }
 };
 
-// --- NIVEL ---
+// --- NIVELES (Mundo 1 y Mundo 2) ---
 const LevelData = {
     1: {
         name: "El Bosque de los Unos",
@@ -389,6 +387,37 @@ const LevelData = {
             {x: 1850, y: 300, w: 40, h: 80, open: false, factor1: 3, factor2: 4}
         ],
         goal: {x: 2300, y: 300, w: 40, h: 80}
+    },
+    2: {
+        name: "Las Dunas del Doble",
+        width: 2600,
+        height: 450,
+        platforms: [
+            {x: 0, y: 380, w: 700, h: 70},
+            {x: 850, y: 380, w: 700, h: 70},
+            {x: 1700, y: 380, w: 900, h: 70},
+            {x: 300, y: 270, w: 130, h: 20},
+            {x: 550, y: 200, w: 130, h: 20},
+            {x: 950, y: 280, w: 140, h: 20},
+            {x: 1250, y: 210, w: 140, h: 20},
+            {x: 1900, y: 270, w: 150, h: 20},
+            {x: 2200, y: 200, w: 150, h: 20}
+        ],
+        crystals: [
+            {x: 330, y: 220, collected: false},
+            {x: 580, y: 150, collected: false},
+            {x: 1000, y: 230, collected: false},
+            {x: 1300, y: 160, collected: false},
+            {x: 1950, y: 220, collected: false}
+        ],
+        enemies: [
+            {x: 900, y: 340, w: 30, h: 40, minX: 880, maxX: 1100, speed: 2, dir: 1},
+            {x: 1800, y: 340, w: 30, h: 40, minX: 1750, maxX: 2000, speed: 2, dir: 1}
+        ],
+        doors: [
+            {x: 1600, y: 300, w: 40, h: 80, open: false, factor1: 4, factor2: 5}
+        ],
+        goal: {x: 2450, y: 300, w: 40, h: 80}
     }
 };
 
@@ -413,6 +442,8 @@ const Game = {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.saveData = Storage.load();
+        this.currentLevel = this.saveData.world || 1;
+        if (!LevelData[this.currentLevel]) this.currentLevel = 1;
 
         window.addEventListener('keydown', e => {
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = true;
@@ -453,6 +484,8 @@ const Game = {
     },
 
     loadLevel(lvlNum) {
+        if (!LevelData[lvlNum]) lvlNum = 1;
+        this.currentLevel = lvlNum;
         this.levelData = JSON.parse(JSON.stringify(LevelData[lvlNum]));
         this.player.x = 100;
         this.player.y = 200;
@@ -496,9 +529,18 @@ const Game = {
 
     nextLevel() {
         document.getElementById('screen-victory').classList.add('hidden');
-        document.getElementById('hud').classList.add('hidden');
-        document.getElementById('screen-title').classList.remove('hidden');
-        this.state = 'TITLE';
+        // Avanzar de mundo o reiniciar si es el último por ahora
+        let nextLvl = this.currentLevel + 1;
+        if (!LevelData[nextLvl]) {
+            nextLvl = 1; // Bucle si se acaban los mundos actuales
+        }
+        this.currentLevel = nextLvl;
+        this.saveData.world = nextLvl;
+        Storage.save(this.saveData);
+
+        this.loadLevel(nextLvl);
+        document.getElementById('hud').classList.remove('hidden');
+        this.state = 'PLAYING';
     },
 
     showProgress() {
@@ -506,9 +548,9 @@ const Game = {
         const total = s.correct + s.wrong;
         const pct = total > 0 ? Math.round((s.correct / total) * 100) : 0;
         document.getElementById('progress-details').innerHTML = `
+            Mundo actual: <strong>${this.currentLevel}</strong><br>
             Cristales conseguidos: <strong>${this.saveData.crystals}</strong><br>
             Preguntas acertadas: <strong>${s.correct}</strong><br>
-            Errores / Repasos: <strong>${s.wrong}</strong><br>
             Precisión: <strong>${pct}%</strong>
         `;
         document.getElementById('screen-title').classList.add('hidden');
@@ -644,6 +686,7 @@ const Game = {
             this.player.y < goal.y + goal.h && this.player.y + this.player.h > goal.y) {
             this.state = 'VICTORY';
             document.getElementById('hud').classList.add('hidden');
+            document.getElementById('victory-stats').innerText = `¡Has superado ${this.levelData.name}!`;
             document.getElementById('screen-victory').classList.remove('hidden');
         }
 
