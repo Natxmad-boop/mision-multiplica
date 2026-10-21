@@ -15,7 +15,6 @@
   }
   #app{display:flex;flex-direction:column;height:100%;max-width:1040px;margin:0 auto;padding:0 6px}
 
-  /* ---------- HUD superior ---------- */
   #hud{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;padding:7px 2px 4px}
   .chip{
     background:#1d2752;border:2px solid #33417f;border-radius:999px;
@@ -26,7 +25,6 @@
   button.chip{cursor:pointer}
   button.chip:active{transform:translateY(1px)}
 
-  /* ---------- Escenario ---------- */
   #stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-height:0}
   canvas{display:block;border-radius:16px;background:#0a0e20;touch-action:none;
     box-shadow:0 10px 30px #0009,0 0 0 3px #33417f}
@@ -38,7 +36,6 @@
   }
   #toast.show{opacity:1;transform:translate(-50%,0)}
 
-  /* ---------- Controles táctiles ---------- */
   #controls{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;
     padding:6px 4px calc(10px + env(safe-area-inset-bottom))}
   .pad{display:flex;gap:10px}
@@ -54,7 +51,6 @@
   }
   .ctrl.jump:active{box-shadow:0 2px 0 #b3457c}
 
-  /* ---------- Overlays ---------- */
   .overlay{
     position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;
     background:#050a18d9;z-index:50;overflow:auto
@@ -79,20 +75,18 @@
     background:#1a2247;color:#b9c4f5;font-family:inherit;cursor:pointer
   }
   .ghost:active{background:#232e63}
-  #answers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 8px}
-  #answers button{
-    font-size:clamp(20px,7vw,28px);font-weight:bold;padding:16px 6px;border-radius:18px;border:0;
-    background:linear-gradient(180deg,#4457a5,#33408a);color:#fff;box-shadow:0 5px 0 #1e2757;
-    font-family:inherit;cursor:pointer
-  }
-  #answers button:active{transform:translateY(2px);box-shadow:0 3px 0 #1e2757}
-  #answers button.ok{background:linear-gradient(180deg,#5fe0a0,#3fbf7f);box-shadow:0 5px 0 #24794f;color:#062e1c}
-  #answers button.bad{background:linear-gradient(180deg,#f0776f,#d9534f);box-shadow:0 5px 0 #8c2f2c}
-  #answers button:disabled{opacity:.85;cursor:default}
-  #qFeedback{min-height:46px;font-size:16px;color:#ffe89a;font-weight:bold;line-height:1.35}
-  #qFeedback small{display:block;font-weight:normal;color:#b9c4f5;margin-top:6px;font-size:14px}
   .badges{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px}
   .badges span{background:#1a2247;border:1px solid #3d4c92;border-radius:999px;padding:4px 10px;font-size:13px}
+
+  /* botones de práctica de la pantalla de inicio */
+  .practice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0 0}
+  .practice-grid button{
+    border:2px solid #4657a0;border-radius:16px;padding:14px 8px;font-size:15px;font-weight:bold;
+    background:linear-gradient(180deg,#2c387a,#1f2a5e);color:#dfe6ff;font-family:inherit;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px
+  }
+  .practice-grid button:active{transform:translateY(2px)}
+  .practice-grid .ico{font-size:24px}
 </style>
 </head>
 <body>
@@ -119,30 +113,34 @@
   </div>
 </div>
 
-<!-- ============ PANTALLA DE INICIO ============ -->
 <div class="overlay" id="ovWelcome">
   <div class="card">
     <h2>🚀 MISIÓN MULTIPLICA</h2>
     <p>Ayuda a <b>Numa</b> a recuperar los fragmentos del <b>Núcleo de los Números</b>.</p>
-    <p>Recoge <b>5 cristales 💎</b>, resuelve la multiplicación del portal y avanza de mundo.</p>
+    <p>Recoge <b>5 cristales 💎</b>, resuelve el reto del portal y avanza de mundo.</p>
     <p id="welcomeInfo" style="color:#8fe8c4;font-weight:bold"></p>
     <button class="primary" id="btnPlay">¡A jugar!</button>
+    <p style="margin-top:18px;color:#8fe8c4;font-weight:bold">🎯 Practicar (elige un reto)</p>
+    <div class="practice-grid" id="practiceGrid">
+      <button data-mg="soccer"><span class="ico">⚽</span>Penalti</button>
+      <button data-mg="bowling"><span class="ico">🎳</span>Bolos</button>
+      <button data-mg="archery"><span class="ico">🏹</span>Arco</button>
+      <button data-mg="quiz"><span class="ico">🔐</span>Quiz</button>
+    </div>
     <button class="ghost" id="btnReset">Reiniciar progreso</button>
     <div class="badges" id="welcomeBadges"></div>
   </div>
 </div>
 
-<!-- ============ PANTALLA DEL QUIZ ============ -->
-<div class="overlay hidden" id="ovQuiz">
+<div class="overlay hidden" id="ovMinigame">
   <div class="card">
-    <h2>🔐 ¡Portal matemático!</h2>
-    <div class="big" id="qText">3 × 4 = ?</div>
-    <div id="answers"></div>
-    <div id="qFeedback"></div>
+    <h2 id="mgTitle">¡Bien hecho!</h2>
+    <div id="mgBody"></div>
+    <button class="primary" id="mgContinue">Continuar</button>
+    <button class="ghost" id="mgRetry">Reintentar</button>
   </div>
 </div>
 
-<!-- ============ PANTALLA DE VICTORIA ============ -->
 <div class="overlay hidden" id="ovFinish">
   <div class="card">
     <h2 id="fTitle">🏆 ¡Mundo completado!</h2>
@@ -166,7 +164,7 @@ const rndInt = (a,b) => Math.floor(rnd(a,b+1));
 function shuffle(arr){
   for(let i=arr.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
-    const tmp = arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+    const t = arr[i]; arr[i]=arr[j]; arr[j]=t;
   }
   return arr;
 }
@@ -183,9 +181,9 @@ function mulberry32(a){
 }
 
 /* =========================================================
-   1. CONSTANTES DE JUEGO
+   1. CONSTANTES
    ========================================================= */
-const W = 800, H = 450;          // resolución lógica
+const W = 800, H = 450;
 const GRAV = 0.62;
 const JUMP_V = -12.4;
 const MAXVX = 3.8;
@@ -194,9 +192,10 @@ const FRIC = 0.78;
 const REQUIRED_GEMS = 5;
 const STEP = 1000/60;
 const SAVE_KEY = 'misionMultiplica';
+const MG_TYPES = ['soccer', 'bowling', 'archery', 'quiz'];
 
 /* =========================================================
-   2. DEFINICIÓN DE MUNDOS
+   2. NIVELES (con estación de práctica)
    ========================================================= */
 const LEVELS = [
   {
@@ -213,6 +212,7 @@ const LEVELS = [
     coins:[[60,368],[150,368],[300,368],[420,368],[540,368],[640,368],[730,368],[200,282],[500,262],[690,250]],
     enemies:[{x:320,y:374,min:260,max:400,speed:0.8}],
     hazards:[],
+    station:{x:445,y:265},
     door:{x:740,y:330,w:46,h:70}
   },
   {
@@ -229,6 +229,7 @@ const LEVELS = [
     coins:[[70,368],[200,368],[320,368],[430,368],[560,368],[700,368],[360,285],[520,215],[660,285]],
     enemies:[{x:80,y:374,min:30,max:160,speed:1.0},{x:520,y:374,min:480,max:600,speed:0.9}],
     hazards:[],
+    station:{x:150,y:285},
     door:{x:740,y:330,w:46,h:70}
   },
   {
@@ -249,6 +250,7 @@ const LEVELS = [
       {x:390,y:425,w:90,h:25,type:'lava'},
       {x:620,y:425,w:80,h:25,type:'lava'}
     ],
+    station:{x:295,y:215},
     door:{x:735,y:330,w:46,h:70}
   },
   {
@@ -269,6 +271,7 @@ const LEVELS = [
       {x:370,y:430,w:80,h:20,type:'spike'},
       {x:580,y:430,w:80,h:20,type:'spike'}
     ],
+    station:{x:485,y:222},
     door:{x:745,y:330,w:46,h:70}
   },
   {
@@ -288,6 +291,7 @@ const LEVELS = [
     coins:[[70,368],[180,368],[290,368],[400,368],[500,368],[600,368],[700,368],[470,270],[240,215]],
     enemies:[{x:300,y:374,min:240,max:340,speed:1.2},{x:700,y:374,min:640,max:790,speed:1.0}],
     hazards:[],
+    station:{x:555,y:212},
     door:{x:745,y:330,w:46,h:70}
   },
   {
@@ -307,6 +311,7 @@ const LEVELS = [
     coins:[[60,368],[170,368],[280,368],[390,368],[470,368],[650,368],[720,368],[220,215],[600,290]],
     enemies:[{x:270,y:374,min:240,max:330,speed:1.1},{x:680,y:374,min:620,max:780,speed:1.1}],
     hazards:[],
+    station:{x:485,y:212},
     door:{x:740,y:330,w:46,h:70}
   }
 ];
@@ -321,7 +326,10 @@ const BADGES = [
   {id:'streak5', icon:'🔥', name:'Racha de 5',       desc:'5 aciertos seguidos'},
   {id:'streak10',icon:'⚡', name:'Racha de 10',      desc:'10 aciertos seguidos'},
   {id:'coins50', icon:'🪙', name:'Coleccionista',    desc:'Consigue 50 monedas'},
-  {id:'perfect', icon:'🎯', name:'Sin fallos',       desc:'Completa un mundo sin fallar'}
+  {id:'perfect', icon:'🎯', name:'Sin fallos',       desc:'Completa un mundo sin fallar'},
+  {id:'soccer',  icon:'⚽', name:'Goleador',         desc:'Marca un gol matemático'},
+  {id:'bowling', icon:'🎳', name:'Pleno al diez',    desc:'Haz un pleno de bolos'},
+  {id:'archery', icon:'🏹', name:'Ojo de halcón',    desc:'Clava una flecha en la diana'}
 ];
 
 /* =========================================================
@@ -332,7 +340,6 @@ const DEFAULT_STATE = {
   correct:0, wrong:0, streak:0, bestStreak:0,
   facts:{}, badges:[], completed:[], muted:false
 };
-
 let state = loadState();
 
 function loadState(){
@@ -347,7 +354,6 @@ function loadState(){
     if(raw.facts && typeof raw.facts === 'object') s.facts = raw.facts;
     if(Array.isArray(raw.badges)) s.badges = raw.badges.slice();
     if(Array.isArray(raw.completed)) s.completed = raw.completed.slice();
-    /* compatibilidad con la versión antigua {world, gems, xp} */
     if(typeof raw.gems === 'number' && !raw.coins) s.coins = raw.gems;
   }
   s.world    = clamp(s.world|0, 0, LEVELS.length-1);
@@ -358,13 +364,12 @@ function loadState(){
   s.bestStreak = Math.max(s.bestStreak|0, s.streak);
   return s;
 }
-
 function saveState(){
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch(e){ /* modo privado */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch(e){}
 }
 
 /* =========================================================
-   5. CANVAS
+   5. CANVAS Y DPR
    ========================================================= */
 const canvas = $('game');
 const ctx = canvas.getContext('2d');
@@ -390,7 +395,7 @@ window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', ()=>setTimeout(resize,150));
 
 /* =========================================================
-   6. AUDIO (WebAudio, sin archivos externos)
+   6. AUDIO
    ========================================================= */
 let actx = null;
 function initAudio(){
@@ -427,6 +432,13 @@ function sfx(name){
     case 'hurt':    tone(180,0.20,'square',0.08); break;
     case 'stomp':   tone(200,0.07,'square',0.08); tone(420,0.08,'square',0.06,0.04); break;
     case 'badge':   [784,1046,1318].forEach((f,i)=>tone(f,0.14,'sine',0.09,i*0.08)); break;
+    case 'kick':    tone(220,0.08,'sawtooth',0.08); tone(440,0.10,'square',0.05,0.06); break;
+    case 'goal':    [523,659,784,1046,1318,1568].forEach((f,i)=>tone(f,0.20,'square',0.10,i*0.08)); break;
+    case 'bowl':    tone(180,0.10,'sawtooth',0.06); tone(120,0.20,'sawtooth',0.05,0.10); break;
+    case 'strike':  [1046,1568,2093].forEach((f,i)=>tone(f,0.14,'triangle',0.10,i*0.10)); break;
+    case 'bow':     tone(320,0.20,'sine',0.05); break;
+    case 'arrow':   tone(880,0.10,'sine',0.06); tone(1320,0.10,'sine',0.04,0.08); break;
+    case 'bullseye':[523,1046,1568,2093].forEach((f,i)=>tone(f,0.15,'sine',0.10,i*0.10)); break;
   }
 }
 
@@ -470,7 +482,7 @@ function drawParticles(){
 }
 
 /* =========================================================
-   8. ESTADO DE PARTIDA
+   8. ESTADO DEL JUEGO
    ========================================================= */
 let level = null;
 const game = {
@@ -479,19 +491,368 @@ const game = {
   found: 0,
   doorOpen: false,
   doorLock: false,
-  mode: 'menu',           // menu | play | quiz | done
+  mode: 'menu',   // 'menu' | 'play' | 'minigame' | 'done'
   frame: 0,
   shake: 0,
   lastDoorMsg: -999,
   wrongInLevel: 0,
-  answered: false,
-  currentQ: null
+  stationUsed: false
 };
-
 const input = { left:false, right:false, jumpBuffer:0 };
 
 /* =========================================================
-   9. CONSTRUCCIÓN DEL NIVEL
+   9. MINI-JUEGO
+   ========================================================= */
+const miniGame = {
+  active: false,
+  type: null,
+  mode: null,                 // 'portal' | 'practice'
+  returnTo: 'play',
+  questions: [],
+  currentIdx: 0,
+  correctCount: 0,
+  requiredCorrect: 3,
+  totalQuestions: 5,
+  phase: 'aim',               // 'aim' | 'flying' | 'result'
+  timer: 0,
+  isCorrect: false,
+  elements: [],
+  projectile: null,
+  projectilePos: { x:0, y:0 },
+  resultText: '',
+  resultSub: '',
+  lastResult: null,
+  stationUsed: false
+};
+
+function getMiniGameTitle(t){
+  switch(t){
+    case 'soccer':  return '⚽ ¡Penalti matemático!';
+    case 'bowling': return '🎳 ¡Bolos numéricos!';
+    case 'archery': return '🏹 ¡Tiro con arco!';
+    case 'quiz':    return '🔐 ¡Portal matemático!';
+  }
+  return '¡Reto!';
+}
+
+function startMiniGame(opts){
+  opts = opts || {};
+  miniGame.active = true;
+  miniGame.mode = opts.mode || 'portal';
+  miniGame.returnTo = opts.returnTo || 'play';
+  miniGame.type = opts.type || MG_TYPES[Math.floor(Math.random() * MG_TYPES.length)];
+  miniGame.requiredCorrect = opts.requiredCorrect || 3;
+  miniGame.totalQuestions = opts.totalQuestions || 5;
+  miniGame.correctCount = 0;
+  miniGame.currentIdx = 0;
+  miniGame.questions = [];
+  for(let i=0;i<miniGame.totalQuestions;i++) miniGame.questions.push(makeQuestion());
+  miniGame.stationUsed = false;
+  game.mode = 'minigame';
+  initMiniGameStage();
+  updateHud();
+  toast(getMiniGameTitle(miniGame.type));
+}
+
+function initMiniGameStage(){
+  miniGame.phase = 'aim';
+  miniGame.timer = 0;
+  miniGame.isCorrect = false;
+  miniGame.projectile = null;
+  miniGame.resultText = '';
+  miniGame.resultSub = '';
+  const q = miniGame.questions[miniGame.currentIdx];
+
+  if(miniGame.type === 'soccer'){
+    const gx = 200, gy = 90, gw = 400, gh = 170;
+    const zw = gw/2, zh = gh/2;
+    miniGame.elements = [];
+    for(let i=0;i<4;i++){
+      const col = i % 2, row = Math.floor(i/2);
+      miniGame.elements.push({
+        x: gx + col*zw, y: gy + row*zh, w: zw, h: zh,
+        cx: gx + col*zw + zw/2, cy: gy + row*zh + zh/2,
+        val: q.choices[i], hit:false
+      });
+    }
+    miniGame.projectile = { startX: 400, startY: 400, endX: 0, endY: 0 };
+  } else if(miniGame.type === 'bowling'){
+    const pinY = 130;
+    const xs = [230, 350, 470, 590];
+    miniGame.elements = xs.map((x,i) => ({
+      x: x, y: pinY, w: 26, h: 70,
+      cx: x + 13, cy: pinY + 35,
+      val: q.choices[i], hit:false, fall: 0
+    }));
+    miniGame.projectile = { startX: 410, startY: 420, endX: 0, endY: 0 };
+  } else if(miniGame.type === 'archery'){
+    const pos = [
+      {x: 170, y: 175}, {x: 340, y: 130}, {x: 540, y: 175}, {x: 680, y: 130}
+    ];
+    miniGame.elements = pos.map((p,i) => ({
+      x: p.x, y: p.y, r: 46,
+      cx: p.x, cy: p.y,
+      val: q.choices[i], hit:false
+    }));
+    miniGame.projectile = { startX: 70, startY: 380, endX: 0, endY: 0 };
+  } else {
+    const positions = [
+      {x: 120, y: 240}, {x: 440, y: 240},
+      {x: 120, y: 340}, {x: 440, y: 340}
+    ];
+    miniGame.elements = positions.map((p,i) => ({
+      x: p.x, y: p.y, w: 240, h: 80,
+      cx: p.x + 120, cy: p.y + 40,
+      val: q.choices[i], hit:false
+    }));
+    miniGame.projectile = null;
+  }
+}
+
+function updateMiniGame(){
+  if(!miniGame.active) return;
+  miniGame.timer++;
+
+  if(miniGame.phase === 'flying'){
+    const q = miniGame.questions[miniGame.currentIdx];
+    const t = Math.min(1, miniGame.timer / 32);
+    const p = miniGame.projectile;
+
+    if(miniGame.type === 'soccer'){
+      miniGame.projectilePos.x = p.startX + (p.endX - p.startX) * t;
+      miniGame.projectilePos.y = p.startY + (p.endY - p.startY) * t - Math.sin(t*Math.PI)*70;
+    } else if(miniGame.type === 'bowling'){
+      miniGame.projectilePos.x = p.startX + (p.endX - p.startX) * t;
+      miniGame.projectilePos.y = p.startY + (p.endY - p.startY) * t;
+    } else if(miniGame.type === 'archery'){
+      miniGame.projectilePos.x = p.startX + (p.endX - p.startX) * t;
+      miniGame.projectilePos.y = p.startY + (p.endY - p.startY) * t - Math.sin(t*Math.PI)*110;
+    }
+
+    if(t >= 1){
+      // llegada
+      const q2 = miniGame.questions[miniGame.currentIdx];
+      const key = q2.a + 'x' + q2.b;
+      const st = state.facts[key] || (state.facts[key] = {c:0, w:0});
+      if(miniGame.isCorrect){
+        st.c++;
+        state.correct++;
+        state.streak++;
+        if(state.streak > state.bestStreak) state.bestStreak = state.streak;
+        state.xp += 5;
+        state.coins += 2;
+        miniGame.correctCount++;
+        miniGame.resultText = (miniGame.type === 'soccer') ? '¡GOOOL! ⚽'
+                          : (miniGame.type === 'bowling') ? '¡PLENO! 🎳'
+                          : (miniGame.type === 'archery') ? '¡DIANA! 🏹'
+                          : '¡CORRECTO! 🌟';
+        if(miniGame.type === 'soccer')  sfx('goal');
+        else if(miniGame.type === 'bowling') sfx('strike');
+        else if(miniGame.type === 'archery') sfx('bullseye');
+        else sfx('correct');
+        burst(miniGame.projectile.endX, miniGame.projectile.endY, 24, '#ffd45c', 4);
+        // insignia por modalidad
+        if(miniGame.type === 'soccer')  award('soccer');
+        if(miniGame.type === 'bowling') award('bowling');
+        if(miniGame.type === 'archery') award('archery');
+      } else {
+        st.w++;
+        state.wrong++;
+        state.streak = 0;
+        miniGame.resultText = '¡Casi!';
+        miniGame.resultSub = q2.a + ' × ' + q2.b + ' = ' + q2.ans;
+        sfx('wrong');
+      }
+      checkBadges();
+      saveState();
+      updateHud();
+      miniGame.phase = 'result';
+      miniGame.timer = 0;
+    }
+  } else if(miniGame.phase === 'result'){
+    if(miniGame.timer > 90){
+      miniGame.currentIdx++;
+      if(miniGame.correctCount >= miniGame.requiredCorrect){
+        finishMiniGame(true);
+      } else if(miniGame.currentIdx >= miniGame.totalQuestions){
+        finishMiniGame(false);
+      } else {
+        initMiniGameStage();
+      }
+    }
+  }
+}
+
+function handleMiniGameTap(x, y){
+  if(miniGame.phase !== 'aim') return;
+  const el = getTappedElement(x, y);
+  if(!el) return;
+  selectMiniGameElement(el);
+}
+
+function handleMiniGameKey(n){
+  if(miniGame.phase !== 'aim') return;
+  if(n < 0 || n >= miniGame.elements.length) return;
+  selectMiniGameElement(miniGame.elements[n]);
+}
+
+function getTappedElement(x, y){
+  for(const el of miniGame.elements){
+    if(el.r){
+      const dx = x - el.x, dy = y - el.y;
+      if(dx*dx + dy*dy < el.r * el.r) return el;
+    } else {
+      if(x >= el.x && x <= el.x + el.w && y >= el.y && y <= el.y + el.h) return el;
+    }
+  }
+  return null;
+}
+
+function selectMiniGameElement(el){
+  const q = miniGame.questions[miniGame.currentIdx];
+  miniGame.isCorrect = (el.val === q.ans);
+  miniGame.phase = 'flying';
+  miniGame.timer = 0;
+
+  const p = miniGame.projectile;
+  if(miniGame.type === 'soccer'){
+    p.endX = el.cx; p.endY = el.cy;
+    sfx('kick');
+  } else if(miniGame.type === 'bowling'){
+    p.endX = el.cx; p.endY = el.cy;
+    sfx('bowl');
+  } else if(miniGame.type === 'archery'){
+    p.endX = el.cx; p.endY = el.cy;
+    sfx('arrow');
+  }
+}
+
+function finishMiniGame(success){
+  miniGame.phase = 'summary';
+  const isPortal = miniGame.mode === 'portal';
+  const title = $('mgTitle');
+  const body = $('mgBody');
+  const retry = $('mgRetry');
+  const cont = $('mgContinue');
+
+  if(success){
+    title.textContent = isPortal ? '🏆 ¡Portal desbloqueado!' : '🎉 ¡Práctica completada!';
+    body.innerHTML =
+      '<p>Aciertos: <b>' + miniGame.correctCount + '</b> de ' + miniGame.totalQuestions + '</p>' +
+      '<p>⭐ +' + (miniGame.correctCount * 5) + ' XP · 🪙 +' + (miniGame.correctCount * 2) + ' monedas</p>' +
+      (isPortal ? '<p style="color:#8fe8c4">¡Corre a tocar el portal!</p>' : '');
+    retry.style.display = 'none';
+    cont.textContent = isPortal ? 'Volver al mundo' : 'Volver';
+  } else {
+    title.textContent = isPortal ? '🔒 Portal bloqueado' : '📘 ¡A seguir practicando!';
+    body.innerHTML =
+      '<p>Aciertos: <b>' + miniGame.correctCount + '</b> de ' + miniGame.totalQuestions + '</p>' +
+      '<p>Necesitas <b>' + miniGame.requiredCorrect + '</b> aciertos. La próxima vez lo harás mejor.</p>' +
+      (isPortal ? '<p style="color:#ffd45c">Puedes explorar, recoger más cristales o practicar.</p>' : '');
+    retry.style.display = 'block';
+    retry.textContent = '🔁 Intentar otra vez';
+    cont.textContent = isPortal ? 'Volver al mundo' : 'Volver';
+  }
+
+  $('ovMinigame').classList.remove('hidden');
+
+  cont.onclick = () => {
+    $('ovMinigame').classList.add('hidden');
+    miniGame.active = false;
+    if(isPortal){
+      if(success){ game.doorOpen = true; }
+      game.mode = 'play';
+      game.doorLock = true;
+    } else {
+      if(miniGame.returnTo === 'welcome'){
+        game.mode = 'menu';
+        $('ovWelcome').classList.remove('hidden');
+      } else {
+        game.mode = 'play';
+        game.doorLock = true;
+      }
+    }
+    lastTime = 0; acc = 0;
+  };
+  retry.onclick = () => {
+    $('ovMinigame').classList.add('hidden');
+    startMiniGame({
+      mode: miniGame.mode, returnTo: miniGame.returnTo,
+      type: miniGame.type,
+      requiredCorrect: miniGame.requiredCorrect,
+      totalQuestions: miniGame.totalQuestions
+    });
+    lastTime = 0; acc = 0;
+  };
+}
+
+/* =========================================================
+   10. PREGUNTAS
+   ========================================================= */
+function pickFact(){
+  const pool = [];
+  const add = (a,b,base) => {
+    const key = a + 'x' + b;
+    const st = state.facts[key] || {c:0,w:0};
+    let w = base + st.w*2.5;
+    if(st.c > 0 && st.w === 0) w *= 0.55;
+    if(st.w > 0) w += 1.5;
+    pool.push({a:a, b:b, w: Math.max(0.4, w)});
+  };
+  const tables = LEVELS[game.levelIndex].tables;
+  for(let i=0;i<tables.length;i++){
+    for(let b=1;b<=10;b++) add(tables[i], b, 1);
+  }
+  if(game.levelIndex > 0 && Math.random() < 0.35){
+    const prev = [];
+    for(let i=0;i<game.levelIndex;i++){
+      LEVELS[i].tables.forEach(t=>{ if(prev.indexOf(t)===-1) prev.push(t); });
+    }
+    if(prev.length){
+      const t = prev[rndInt(0, prev.length-1)];
+      add(t, rndInt(1,10), 2.2);
+    }
+  }
+  let total = 0;
+  for(let i=0;i<pool.length;i++) total += pool[i].w;
+  let r = Math.random()*total;
+  for(let i=0;i<pool.length;i++){
+    r -= pool[i].w;
+    if(r <= 0) return pool[i];
+  }
+  return pool[pool.length-1];
+}
+
+function makeChoices(a, b, ans){
+  const set = new Set([ans]);
+  const cands = [];
+  for(let k=1;k<=10;k++){
+    if(a*k !== ans) cands.push(a*k);
+    if(b*k !== ans) cands.push(b*k);
+  }
+  cands.push(ans+1, ans-1, ans+2, ans-2, ans+10, ans-10,
+             ans+a, ans-a, ans+b, ans-b, ans+3, ans-3, ans+20, ans-20);
+  shuffle(cands);
+  for(let i=0;i<cands.length && set.size<4;i++){
+    const v = cands[i];
+    if(v > 0 && v <= 120) set.add(v);
+  }
+  let n = 1;
+  while(set.size < 4){
+    if(ans + n > 0) set.add(ans + n);
+    n++;
+  }
+  return shuffle(Array.from(set));
+}
+
+function makeQuestion(){
+  const f = pickFact();
+  const ans = f.a * f.b;
+  return { a:f.a, b:f.b, ans:ans, choices: makeChoices(f.a, f.b, ans) };
+}
+
+/* =========================================================
+   11. CONSTRUCCIÓN DEL NIVEL
    ========================================================= */
 function makePlayer(spawn){
   return {
@@ -539,7 +900,7 @@ function makeDecor(L){
 function buildLevel(index){
   const src = LEVELS[clamp(index,0,LEVELS.length-1)];
   const L = {
-    index: src.index !== undefined ? src.index : index,
+    index: index,
     name: src.name,
     tables: src.tables,
     style: src.style,
@@ -561,14 +922,14 @@ function buildLevel(index){
       speed:e.speed || 0.9, dir:1, stun:0, anim:0
     })),
     hazards: (src.hazards || []).map(h => ({x:h.x, y:h.y, w:h.w, h:h.h, type:h.type || 'lava'})),
+    station: src.station ? {x:src.station.x, y:src.station.y, used:false, ph:Math.random()*6.28} : null,
     door: {x:src.door.x, y:src.door.y, w:src.door.w, h:src.door.h},
     solids: [],
     particles
   };
   L.solids = L.platforms.concat(L.movers);
-  L.stars = makeStars(L.index);
+  L.stars = makeStars(index);
   L.decor = makeDecor(L);
-  L.index = index;
   return L;
 }
 
@@ -576,20 +937,20 @@ function startLevel(i){
   const idx = clamp(i, 0, LEVELS.length-1);
   game.levelIndex = idx;
   level = buildLevel(idx);
-  game.player   = makePlayer(level.spawn);
-  game.found    = 0;
+  game.player = makePlayer(level.spawn);
+  game.found = 0;
   game.doorOpen = false;
   game.doorLock = false;
   game.wrongInLevel = 0;
-  game.shake    = 0;
-  game.frame    = 0;
+  game.shake = 0;
+  game.frame = 0;
   game.lastDoorMsg = -999;
-  game.answered = false;
-  game.currentQ = null;
-  game.mode     = 'play';
+  game.stationUsed = false;
+  game.mode = 'play';
+  miniGame.active = false;
   input.left = input.right = false;
   input.jumpBuffer = 0;
-  $('ovQuiz').classList.add('hidden');
+  $('ovMinigame').classList.add('hidden');
   $('ovFinish').classList.add('hidden');
   $('ovWelcome').classList.add('hidden');
   updateHud();
@@ -597,15 +958,15 @@ function startLevel(i){
 }
 
 /* =========================================================
-   10. HUD
+   12. HUD Y TOAST
    ========================================================= */
 function updateHud(){
   const L = LEVELS[game.levelIndex] || LEVELS[0];
   $('chipWorld').textContent = '🌍 ' + L.name;
-  $('chipGems').textContent  = game.found + '/' + REQUIRED_GEMS;
+  $('chipGems').textContent = game.found + '/' + REQUIRED_GEMS;
   $('chipCoins').textContent = state.coins;
-  $('chipXp').textContent    = state.xp;
-  $('btnSound').textContent  = state.muted ? '🔇' : '🔊';
+  $('chipXp').textContent = state.xp;
+  $('btnSound').textContent = state.muted ? '🔇' : '🔊';
 }
 
 let toastTimer = null;
@@ -618,7 +979,7 @@ function toast(msg){
 }
 
 /* =========================================================
-   11. INSIGNIAS
+   13. INSIGNIAS
    ========================================================= */
 function award(id){
   if(state.badges.indexOf(id) !== -1) return;
@@ -651,7 +1012,7 @@ function renderWelcomeBadges(){
 }
 
 /* =========================================================
-   12. FÍSICA DEL JUGADOR
+   14. FÍSICA DEL JUGADOR (PLATAFORMAS)
    ========================================================= */
 function moveX(P, dx){
   if(dx === 0) return;
@@ -667,7 +1028,6 @@ function moveX(P, dx){
   if(P.x < 0){ P.x = 0; P.vx = 0; }
   if(P.x > W - P.w){ P.x = W - P.w; P.vx = 0; }
 }
-
 function moveY(P, dy){
   if(dy === 0) return;
   P.y += dy;
@@ -687,7 +1047,6 @@ function moveY(P, dy){
     }
   }
 }
-
 function updateMovers(){
   for(const m of level.movers){
     const px = m.x, py = m.y;
@@ -698,20 +1057,15 @@ function updateMovers(){
     m.dy = m.y - py;
   }
 }
-
 function updatePlayer(){
   const P = game.player;
   if(!P) return;
-
-  /* transporte por plataforma móvil horizontal */
   if(P.carrier && P.carrier.dx){
     P.x = clamp(P.x + P.carrier.dx, 0, W - P.w);
   }
-
   let dir = 0;
   if(input.left)  dir -= 1;
   if(input.right) dir += 1;
-
   if(dir !== 0){
     P.vx += dir * ACC;
     P.face = dir;
@@ -721,7 +1075,6 @@ function updatePlayer(){
   }
   P.vx = clamp(P.vx, -MAXVX, MAXVX);
 
-  /* salto con coyote time */
   if(input.jumpBuffer > 0) input.jumpBuffer--;
   if(P.onGround) P.coyote = 8;
   else if(P.coyote > 0) P.coyote--;
@@ -737,7 +1090,6 @@ function updatePlayer(){
   }
 
   P.vy = Math.min(P.vy + GRAV, 15);
-
   P.onGround = false;
   P.carrier = null;
   P.landImpact = 0;
@@ -754,17 +1106,14 @@ function updatePlayer(){
     burst(P.x + P.w/2, P.y + P.h, 4, '#ffffff', 1.1);
   }
 
-  /* animaciones */
   P.squash += (0 - P.squash) * 0.18;
   if(Math.abs(P.squash) < 0.01) P.squash = 0;
   if(P.onGround && Math.abs(P.vx) > 0.5) P.anim += 0.22;
   else P.anim *= 0.9;
 
   if(P.invuln > 0) P.invuln--;
-
   if(P.y > H + 80) respawnPlayer(true);
 }
-
 function respawnPlayer(silent){
   const P = game.player;
   P.x = P.spawn.x; P.y = P.spawn.y;
@@ -776,7 +1125,7 @@ function respawnPlayer(silent){
 }
 
 /* =========================================================
-   13. ENEMIGOS, OBJETOS Y PORTAL
+   15. ENEMIGOS, OBJETOS, PORTAL Y ESTACIÓN
    ========================================================= */
 function updateEnemies(){
   const P = game.player;
@@ -810,7 +1159,6 @@ function updateEnemies(){
     }
   }
 }
-
 function checkCollectibles(){
   const P = game.player;
   const px = P.x + P.w/2, py = P.y + P.h/2;
@@ -829,7 +1177,6 @@ function checkCollectibles(){
       updateHud(); saveState();
     }
   }
-
   for(const co of level.coins){
     if(co.taken) continue;
     const dx = px - co.x, dy = py - co.y;
@@ -843,7 +1190,6 @@ function checkCollectibles(){
     }
   }
 }
-
 function checkHazards(){
   const P = game.player;
   if(P.invuln > 0) return;
@@ -851,22 +1197,38 @@ function checkHazards(){
     if(overlap(P, hz)){ respawnPlayer(false); return; }
   }
 }
-
+function checkStation(){
+  const st = level.station;
+  if(!st || st.used) return;
+  const P = game.player;
+  const cx = P.x + P.w/2, cy = P.y + P.h/2;
+  const dx = cx - st.x, dy = cy - st.y;
+  if(dx*dx + dy*dy < 1400){
+    st.used = true;
+    burst(st.x, st.y, 20, '#c9aaff', 3);
+    startMiniGame({
+      mode: 'practice',
+      returnTo: 'play',
+      type: MG_TYPES[Math.floor(Math.random() * MG_TYPES.length)],
+      requiredCorrect: 1,
+      totalQuestions: 2
+    });
+  }
+}
 function checkDoor(){
   const P = game.player;
   const d = level.door;
   const touching = P.x + P.w > d.x && P.x < d.x + d.w && P.y + P.h > d.y && P.y < d.y + d.h;
-
   if(!touching){ game.doorLock = false; return; }
   if(game.doorLock) return;
-
-  if(game.doorOpen){
-    winLevel();
-    return;
-  }
-
+  if(game.doorOpen){ winLevel(); return; }
   if(game.found >= REQUIRED_GEMS){
-    openQuiz();
+    startMiniGame({
+      mode: 'portal',
+      returnTo: 'play',
+      requiredCorrect: 3,
+      totalQuestions: 5
+    });
   } else if(game.frame - game.lastDoorMsg > 110){
     game.lastDoorMsg = game.frame;
     toast('Necesitas ' + (REQUIRED_GEMS - game.found) + ' cristal(es) más 💎');
@@ -874,165 +1236,11 @@ function checkDoor(){
 }
 
 /* =========================================================
-   14. SISTEMA DE PREGUNTAS
-   ========================================================= */
-function pickFact(){
-  const pool = [];
-  const add = (a,b,base)=>{
-    const key = a + 'x' + b;
-    const st = state.facts[key] || {c:0,w:0};
-    let w = base + st.w*2.5;
-    if(st.c > 0 && st.w === 0) w *= 0.55;   // ya dominada → menos probable
-    if(st.w > 0) w += 1.5;                  // fallada → refuerzo
-    pool.push({a:a, b:b, w: Math.max(0.4, w)});
-  };
-
-  const tables = LEVELS[game.levelIndex].tables;
-  for(let i=0;i<tables.length;i++){
-    for(let b=1;b<=10;b++) add(tables[i], b, 1);
-  }
-
-  /* repaso de tablas anteriores */
-  if(game.levelIndex > 0 && Math.random() < 0.35){
-    const prev = [];
-    for(let i=0;i<game.levelIndex;i++){
-      LEVELS[i].tables.forEach(t=>{ if(prev.indexOf(t)===-1) prev.push(t); });
-    }
-    if(prev.length){
-      const t = prev[rndInt(0, prev.length-1)];
-      add(t, rndInt(1,10), 2.2);
-    }
-  }
-
-  let total = 0;
-  for(let i=0;i<pool.length;i++) total += pool[i].w;
-  let r = Math.random()*total;
-  for(let i=0;i<pool.length;i++){
-    r -= pool[i].w;
-    if(r <= 0) return pool[i];
-  }
-  return pool[pool.length-1];
-}
-
-function makeChoices(a, b, ans){
-  const set = new Set([ans]);
-  const cands = [];
-  for(let k=1;k<=10;k++){
-    if(a*k !== ans) cands.push(a*k);
-    if(b*k !== ans) cands.push(b*k);
-  }
-  cands.push(ans+1, ans-1, ans+2, ans-2, ans+10, ans-10,
-             ans+a, ans-a, ans+b, ans-b, ans+3, ans-3, ans+20, ans-20);
-  shuffle(cands);
-  for(let i=0;i<cands.length && set.size<4;i++){
-    const v = cands[i];
-    if(v > 0 && v <= 120) set.add(v);
-  }
-  let n = 1;
-  while(set.size < 4){
-    if(ans + n > 0) set.add(ans + n);
-    n++;
-  }
-  return shuffle(Array.from(set));
-}
-
-function makeQuestion(){
-  const f = pickFact();
-  const ans = f.a * f.b;
-  return { a:f.a, b:f.b, ans:ans, choices: makeChoices(f.a, f.b, ans) };
-}
-
-function openQuiz(){
-  if(game.mode !== 'play') return;
-  game.mode = 'quiz';
-  game.answered = false;
-  game.currentQ = makeQuestion();
-  renderQuiz(game.currentQ);
-  $('ovQuiz').classList.remove('hidden');
-}
-
-function renderQuiz(q){
-  $('qText').textContent = q.a + ' × ' + q.b + ' = ?';
-  $('qFeedback').textContent = '';
-  const box = $('answers');
-  box.innerHTML = '';
-  q.choices.forEach(v=>{
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = v;
-    b.addEventListener('click', ()=>answer(v, b));
-    box.appendChild(b);
-  });
-}
-
-function answer(v, btn){
-  if(game.mode !== 'quiz' || game.answered) return;
-  game.answered = true;
-  const q = game.currentQ;
-  const key = q.a + 'x' + q.b;
-  const st = state.facts[key] || (state.facts[key] = {c:0, w:0});
-
-  const buttons = Array.prototype.slice.call($('answers').children);
-  buttons.forEach(b=>{
-    b.disabled = true;
-    if(Number(b.textContent) === q.ans) b.classList.add('ok');
-  });
-
-  if(v === q.ans){
-    btn.classList.add('ok');
-    st.c++;
-    state.correct++;
-    state.streak++;
-    if(state.streak > state.bestStreak) state.bestStreak = state.streak;
-    state.xp += 10;
-    state.coins += 3;
-    game.doorOpen = true;
-    sfx('correct');
-    $('qFeedback').innerHTML = '¡Correcto! +10 XP, +3 monedas 🪙<small>¡El portal se ha abierto! Sal y vuelve a tocarlo.</small>';
-    burst(400, 200, 26, '#ffd45c', 4);
-    setTimeout(closeQuiz, 1100);
-  } else {
-    btn.classList.add('bad');
-    st.w++;
-    state.wrong++;
-    state.streak = 0;
-    game.wrongInLevel++;
-    sfx('wrong');
-    $('qFeedback').innerHTML = 'Casi… ' + q.a + ' × ' + q.b + ' = <b>' + q.ans + '</b>' +
-      '<small>' + hintText(q.a, q.b) + '</small>';
-    setTimeout(closeQuiz, 2900);
-  }
-
-  checkBadges();
-  saveState();
-  updateHud();
-}
-
-function hintText(a, b){
-  if(b <= 4){
-    const parts = [];
-    for(let i=0;i<b;i++) parts.push(a);
-    return 'Truco: ' + b + ' veces ' + a + ' → ' + parts.join(' + ') + ' = ' + (a*b);
-  }
-  return 'Truco: ' + a + ' × ' + b + ' es lo mismo que ' + b + ' × ' + a + ' = ' + (a*b) + '.';
-}
-
-function closeQuiz(){
-  if(game.mode !== 'quiz') return;
-  $('ovQuiz').classList.add('hidden');
-  game.mode = 'play';
-  game.answered = false;
-  game.currentQ = null;
-  game.doorLock = true;   // hay que separarse del portal para reactivarlo
-}
-
-/* =========================================================
-   15. VICTORIA
+   16. VICTORIA
    ========================================================= */
 function winLevel(){
   if(game.mode !== 'play') return;
   game.mode = 'done';
-
   if(state.completed.indexOf(game.levelIndex) === -1) state.completed.push(game.levelIndex);
   state.unlocked = clamp(Math.max(state.unlocked, game.levelIndex+2), 1, LEVELS.length);
   if(game.levelIndex + 1 > state.world){
@@ -1047,15 +1255,12 @@ function winLevel(){
   sfx('win');
   showFinish();
 }
-
 function showFinish(){
   const isLast = game.levelIndex >= LEVELS.length-1;
   $('fTitle').textContent = isLast ? '🌟 ¡MISIÓN COMPLETADA! 🌟' : '🏆 ¡Mundo completado!';
-
   let html = '';
   html += '<p>Has recuperado el fragmento de <b>' + level.name + '</b>.</p>';
   html += '<p>💎 Cristales: ' + game.found + ' · 🪙 Monedas: ' + state.coins + ' · ⭐ XP: ' + state.xp + '</p>';
-
   const got = BADGES.filter(b => state.badges.indexOf(b.id) !== -1);
   if(got.length){
     html += '<div class="badges">' + got.map(b=>'<span>'+b.icon+' '+b.name+'</span>').join('') + '</div>';
@@ -1069,7 +1274,7 @@ function showFinish(){
 }
 
 /* =========================================================
-   16. BUCLE PRINCIPAL
+   17. BUCLE PRINCIPAL
    ========================================================= */
 function update(){
   game.frame++;
@@ -1078,6 +1283,7 @@ function update(){
   updateEnemies();
   checkCollectibles();
   checkHazards();
+  checkStation();
   checkDoor();
   if(game.shake > 0.3) game.shake *= 0.9;
   else game.shake = 0;
@@ -1087,7 +1293,6 @@ let lastTime = 0, acc = 0;
 
 function loop(ts){
   requestAnimationFrame(loop);
-
   if(!lastTime) lastTime = ts;
   let dt = ts - lastTime;
   lastTime = ts;
@@ -1102,6 +1307,9 @@ function loop(ts){
       guard++;
     }
     if(guard >= 5) acc = 0;
+  } else if(game.mode === 'minigame'){
+    updateMiniGame();
+    acc = 0;
   } else {
     acc = 0;
   }
@@ -1111,7 +1319,7 @@ function loop(ts){
 }
 
 /* =========================================================
-   17. RENDERIZADO
+   18. RENDERIZADO DEL MUNDO
    ========================================================= */
 function rr(x,y,w,h,r){
   r = Math.min(r, w/2, h/2);
@@ -1127,7 +1335,6 @@ function rr(x,y,w,h,r){
   ctx.quadraticCurveTo(x, y, x+r, y);
   ctx.closePath();
 }
-
 function starShape(cx, cy, r, color){
   ctx.fillStyle = color;
   ctx.beginPath();
@@ -1145,16 +1352,21 @@ function starShape(cx, cy, r, color){
 function render(){
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.clearRect(0,0,W,H);
+
+  if(game.mode === 'minigame'){
+    renderMiniGame();
+    return;
+  }
   if(!level) return;
 
   if(game.shake > 0.3){
     ctx.translate(rnd(-game.shake, game.shake), rnd(-game.shake, game.shake));
   }
-
   drawSky();
   drawDecor();
   drawPlatforms();
   drawHazards();
+  drawStation();
   drawCoins();
   drawCrystals();
   drawDoor();
@@ -1170,8 +1382,6 @@ function drawSky(){
   g.addColorStop(1, level.sky[1]);
   ctx.fillStyle = g;
   ctx.fillRect(0,0,W,H);
-
-  /* estrellas visibles en galaxia / portal / volcán */
   if(level.style === 'galaxia' || level.style === 'portal' || level.style === 'volcan'){
     for(let i=0;i<level.stars.length;i++){
       const s = level.stars[i];
@@ -1272,11 +1482,9 @@ function drawBlock(p, isMover){
   ctx.fillStyle = level.ground;
   rr(p.x, p.y, p.w, p.h, 7);
   ctx.fill();
-
   ctx.fillStyle = level.groundTop;
   rr(p.x + 2, p.y + 2, p.w - 4, Math.min(9, Math.max(4, p.h - 4)), 5);
   ctx.fill();
-
   if(isMover){
     ctx.strokeStyle = 'rgba(255,255,255,0.65)';
     ctx.lineWidth = 2;
@@ -1289,12 +1497,10 @@ function drawBlock(p, isMover){
     }
   }
 }
-
 function drawPlatforms(){
   for(let i=0;i<level.platforms.length;i++) drawBlock(level.platforms[i], false);
   for(let i=0;i<level.movers.length;i++)     drawBlock(level.movers[i], true);
 }
-
 function drawHazards(){
   for(const hz of level.hazards){
     if(hz.type === 'lava'){
@@ -1325,7 +1531,6 @@ function drawHazards(){
     }
   }
 }
-
 function drawCoins(){
   for(const co of level.coins){
     if(co.taken) continue;
@@ -1341,7 +1546,6 @@ function drawCoins(){
     ctx.restore();
   }
 }
-
 function drawCrystals(){
   for(const c of level.crystals){
     if(c.taken) continue;
@@ -1366,14 +1570,49 @@ function drawCrystals(){
   }
 }
 
+function drawStation(){
+  const st = level.station;
+  if(!st || st.used) return;
+  const bob = Math.sin(game.frame*0.06 + st.ph) * 4;
+  const pulse = 0.65 + 0.35*Math.sin(game.frame*0.1 + st.ph);
+
+  ctx.save();
+  ctx.translate(st.x, st.y + bob);
+  // aura
+  const g = ctx.createRadialGradient(0,0,4,0,0,40);
+  g.addColorStop(0, 'rgba(201,170,255,' + (0.55*pulse) + ')');
+  g.addColorStop(1, 'rgba(201,170,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(-40,-40,80,80);
+
+  // libro mágico
+  ctx.fillStyle = '#7d4ecb';
+  rr(-18,-13,36,26,5); ctx.fill();
+  ctx.fillStyle = '#f4eaff';
+  rr(-15,-10,30,20,3); ctx.fill();
+  ctx.fillStyle = '#8d6dd6';
+  ctx.fillRect(-2,-10,4,20);
+  // brillitos
+  starShape(-8, -2, 3, '#ffd45c');
+  starShape(6, 4, 2, '#ffd45c');
+
+  // etiqueta
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  rr(-30, 20, 60, 18, 9); ctx.fill();
+  ctx.fillStyle = '#ffd45c';
+  ctx.font = 'bold 11px "Trebuchet MS",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('📚 ¡Reto!', 0, 33);
+  ctx.textAlign = 'left';
+  ctx.restore();
+}
+
 function drawDoor(){
   const d = level.door;
   const open = game.doorOpen;
   const pulse = 0.5 + 0.5*Math.sin(game.frame*0.08);
 
   ctx.save();
-
-  /* aura */
   if(open){
     const g = ctx.createRadialGradient(d.x + d.w/2, d.y + d.h/2, 4, d.x + d.w/2, d.y + d.h/2, 70);
     g.addColorStop(0, 'rgba(255,212,92,' + (0.55 + 0.25*pulse) + ')');
@@ -1382,12 +1621,10 @@ function drawDoor(){
     ctx.fillRect(d.x - 70, d.y - 70, d.w + 140, d.h + 140);
   }
 
-  /* marco */
   ctx.fillStyle = open ? '#ffd45c' : '#8a93c9';
   rr(d.x - 4, d.y - 4, d.w + 8, d.h + 8, 12);
   ctx.fill();
 
-  /* interior */
   if(open){
     const g2 = ctx.createLinearGradient(d.x, d.y, d.x + d.w, d.y + d.h);
     g2.addColorStop(0, '#fff8d0');
@@ -1401,7 +1638,6 @@ function drawDoor(){
   ctx.fill();
 
   if(open){
-    /* remolino del portal */
     ctx.strokeStyle = 'rgba(255,255,255,0.85)';
     ctx.lineWidth = 3;
     for(let i=0;i<3;i++){
@@ -1411,7 +1647,6 @@ function drawDoor(){
       ctx.stroke();
     }
   } else {
-    /* candado */
     ctx.fillStyle = '#b9c4f5';
     ctx.fillRect(d.x + d.w/2 - 7, d.y + 22, 14, 12);
     ctx.strokeStyle = '#b9c4f5';
@@ -1421,7 +1656,6 @@ function drawDoor(){
     ctx.stroke();
   }
 
-  /* indicador */
   if(!open){
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
     rr(d.x - 14, d.y - 32, d.w + 28, 22, 10);
@@ -1461,7 +1695,6 @@ function drawEnemies(){
     ctx.ellipse(0, -e.h/2 + bob, e.w/2, e.h/2, 0, 0, Math.PI*2);
     ctx.fill();
 
-    /* ojos */
     const look = e.dir*2;
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.arc(-6 + look, -e.h*0.6 + bob, 4.2, 0, Math.PI*2); ctx.fill();
@@ -1491,19 +1724,16 @@ function drawPlayer(){
   ctx.translate(cx, by);
   ctx.scale(1 + sq*0.25 - stretch*0.5, 1 - sq*0.25 + stretch);
 
-  /* sombra */
   ctx.fillStyle = 'rgba(0,0,0,0.22)';
   ctx.beginPath();
   ctx.ellipse(0, 0, 14, 4.5, 0, 0, Math.PI*2);
   ctx.fill();
 
-  /* piernas */
   const legPhase = walking ? Math.sin(t*1.6) : 0;
   ctx.fillStyle = '#2b3a63';
   rr(-9, -8 + legPhase*2, 7, 9, 3); ctx.fill();
   rr( 2, -8 - legPhase*2, 7, 9, 3); ctx.fill();
 
-  /* cuerpo */
   const g = ctx.createLinearGradient(0, -38, 0, -2);
   g.addColorStop(0, '#8ef0d0');
   g.addColorStop(1, '#37a98b');
@@ -1512,13 +1742,11 @@ function drawPlayer(){
   ctx.ellipse(0, -20 + bob, 15, 17, 0, 0, Math.PI*2);
   ctx.fill();
 
-  /* barriga */
   ctx.fillStyle = '#d9fff4';
   ctx.beginPath();
   ctx.ellipse(0, -15 + bob, 9, 10, 0, 0, Math.PI*2);
   ctx.fill();
 
-  /* brazos */
   ctx.strokeStyle = '#37a98b';
   ctx.lineWidth = 5;
   ctx.lineCap = 'round';
@@ -1526,7 +1754,6 @@ function drawPlayer(){
   ctx.beginPath(); ctx.moveTo(-13, -20 + bob); ctx.lineTo(-19, armY + bob); ctx.stroke();
   ctx.beginPath(); ctx.moveTo( 13, -20 + bob); ctx.lineTo( 19, armY + bob); ctx.stroke();
 
-  /* ojos */
   const look = P.face * 1.8;
   ctx.fillStyle = '#ffffff';
   ctx.beginPath(); ctx.ellipse(-5 + look*0.3, -24 + bob, 4.6, 5.4, 0, 0, Math.PI*2); ctx.fill();
@@ -1535,19 +1762,16 @@ function drawPlayer(){
   ctx.beginPath(); ctx.arc(-5 + look, -24 + bob, 2.3, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc( 5 + look, -24 + bob, 2.3, 0, Math.PI*2); ctx.fill();
 
-  /* mejillas */
   ctx.fillStyle = 'rgba(255,120,170,0.55)';
   ctx.beginPath(); ctx.arc(-9, -18 + bob, 2.6, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc( 9, -18 + bob, 2.6, 0, Math.PI*2); ctx.fill();
 
-  /* boca */
   ctx.strokeStyle = '#1b2340';
   ctx.lineWidth = 1.6;
   ctx.beginPath();
   ctx.arc(0, -18 + bob, 3.2, 0.15*Math.PI, 0.85*Math.PI);
   ctx.stroke();
 
-  /* antena + estrella */
   ctx.strokeStyle = '#ffd45c';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -1560,7 +1784,6 @@ function drawPlayer(){
 }
 
 function drawCanvasHud(){
-  /* contador de cristales dentro del lienzo */
   ctx.save();
   ctx.fillStyle = 'rgba(10,16,38,0.55)';
   rr(12, 12, 132, 30, 15);
@@ -1581,12 +1804,550 @@ function drawCanvasHud(){
 }
 
 /* =========================================================
-   18. CONTROLES
+   19. RENDERIZADO DEL MINI-JUEGO
+   ========================================================= */
+function renderMiniGame(){
+  const q = miniGame.questions[miniGame.currentIdx];
+  if(!q) return;
+
+  if(miniGame.type === 'soccer')       drawMiniGameSoccer(q);
+  else if(miniGame.type === 'bowling') drawMiniGameBowling(q);
+  else if(miniGame.type === 'archery') drawMiniGameArchery(q);
+  else                                 drawMiniGameQuiz(q);
+
+  // cabecera común: pregunta + progreso
+  drawMiniGameHeader(q);
+
+  if(miniGame.phase === 'result'){
+    drawMiniGameResult();
+  }
+
+  drawParticles();
+}
+
+function drawMiniGameHeader(q){
+  // caja pregunta arriba
+  ctx.save();
+  ctx.fillStyle = 'rgba(10,16,38,0.82)';
+  rr(20, 8, W - 40, 54, 16);
+  ctx.fill();
+  ctx.strokeStyle = '#ffd45c';
+  ctx.lineWidth = 2;
+  rr(20, 8, W - 40, 54, 16);
+  ctx.stroke();
+
+  ctx.fillStyle = '#ffd45c';
+  ctx.font = 'bold 26px "Trebuchet MS",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(q.a + ' × ' + q.b + ' = ?', W/2, 36);
+
+  // progreso a la izquierda
+  ctx.fillStyle = 'rgba(10,16,38,0.7)';
+  rr(20, H - 34, 200, 24, 12);
+  ctx.fill();
+  ctx.fillStyle = '#8fe8c4';
+  ctx.font = 'bold 13px "Trebuchet MS",sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Pregunta ' + (miniGame.currentIdx + 1) + '/' + miniGame.totalQuestions, 32, H - 18);
+
+  // aciertos a la derecha
+  ctx.fillStyle = 'rgba(10,16,38,0.7)';
+  rr(W - 200, H - 34, 180, 24, 12);
+  ctx.fill();
+  ctx.fillStyle = '#ffd45c';
+  ctx.textAlign = 'right';
+  ctx.fillText('✅ ' + miniGame.correctCount + ' / ' + miniGame.requiredCorrect, W - 32, H - 18);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.restore();
+}
+
+function drawMiniGameResult(){
+  const t = Math.min(1, miniGame.timer / 20);
+  ctx.save();
+  ctx.globalAlpha = t;
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  if(miniGame.isCorrect){
+    const scale = 1 + Math.sin(miniGame.timer * 0.2) * 0.04;
+    ctx.save();
+    ctx.translate(W/2, H/2 - 10);
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#ffd45c';
+    ctx.font = 'bold 52px "Trebuchet MS",sans-serif';
+    ctx.fillText(miniGame.resultText, 0, 0);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = '#ff9c9c';
+    ctx.font = 'bold 52px "Trebuchet MS",sans-serif';
+    ctx.fillText(miniGame.resultText, W/2, H/2 - 30);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 30px "Trebuchet MS",sans-serif';
+    ctx.fillText(miniGame.resultSub, W/2, H/2 + 30);
+    ctx.fillStyle = '#b9c4f5';
+    ctx.font = '16px "Trebuchet MS",sans-serif';
+    ctx.fillText(hintText(miniGame.questions[miniGame.currentIdx].a,
+                          miniGame.questions[miniGame.currentIdx].b), W/2, H/2 + 70);
+  }
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.restore();
+}
+
+function hintText(a, b){
+  if(b <= 4){
+    const parts = [];
+    for(let i=0;i<b;i++) parts.push(a);
+    return b + ' veces ' + a + ' → ' + parts.join(' + ') + ' = ' + (a*b);
+  }
+  return a + ' × ' + b + ' = ' + b + ' × ' + a + ' = ' + (a*b);
+}
+
+/* --- SOCCER --- */
+function drawMiniGameSoccer(q){
+  // cielo
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, '#2a6db5');
+  g.addColorStop(0.6, '#7bc4f0');
+  g.addColorStop(1, '#3a9c5c');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // césped
+  ctx.fillStyle = '#4caf50';
+  ctx.fillRect(0, 270, W, H - 270);
+  for(let i=0;i<W;i+=80){
+    ctx.fillStyle = (i/80) % 2 === 0 ? '#43a047' : '#4caf50';
+    ctx.fillRect(i, 270, 80, H - 270);
+  }
+  // área
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(150, 280, 500, 130);
+
+  // portería
+  const gx = 200, gy = 90, gw = 400, gh = 170;
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(gx + 6, gy + 6, gw, gh);
+
+  // red
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<=gw;i+=20){
+    ctx.beginPath(); ctx.moveTo(gx + i, gy); ctx.lineTo(gx + i, gy + gh); ctx.stroke();
+  }
+  for(let i=0;i<=gh;i+=20){
+    ctx.beginPath(); ctx.moveTo(gx, gy + i); ctx.lineTo(gx + gw, gy + i); ctx.stroke();
+  }
+  // marco
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 8;
+  ctx.strokeRect(gx, gy, gw, gh);
+
+  // zonas con números
+  for(const el of miniGame.elements){
+    if(el.hit){
+      ctx.fillStyle = 'rgba(120,255,160,0.55)';
+      ctx.fillRect(el.x + 6, el.y + 6, el.w - 12, el.h - 12);
+    } else {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(el.x + 6, el.y + 6, el.w - 12, el.h - 12);
+    }
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 46px "Trebuchet MS",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(el.val, el.cx, el.cy);
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  // balón
+  let bx = 400, by = 410;
+  if(miniGame.phase !== 'aim' && miniGame.projectilePos){
+    bx = miniGame.projectilePos.x;
+    by = miniGame.projectilePos.y;
+  }
+  drawSoccerBall(bx, by, 16);
+
+  // indicaciones
+  if(miniGame.phase === 'aim'){
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = 'bold 16px "Trebuchet MS",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('👆 Toca la zona con la respuesta correcta', W/2, 260);
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawSoccerBall(x, y, r){
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + r + 4, r * 0.9, 4, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // pentágonos negros
+  ctx.fillStyle = '#222';
+  const pent = [[0,-r*0.45],[-r*0.5,-r*0.1],[r*0.5,-r*0.1],[-r*0.3,r*0.4],[r*0.3,r*0.4]];
+  ctx.beginPath();
+  for(let i=0;i<pent.length;i++){
+    if(i===0) ctx.moveTo(x + pent[i][0], y + pent[i][1]);
+    else ctx.lineTo(x + pent[i][0], y + pent[i][1]);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/* --- BOWLING --- */
+function drawMiniGameBowling(q){
+  // fondo
+  ctx.fillStyle = '#1a1030';
+  ctx.fillRect(0, 0, W, H);
+
+  // pared
+  ctx.fillStyle = '#2a1b4a';
+  ctx.fillRect(0, 60, W, 60);
+
+  // pista
+  const laneY = 200, laneH = 210;
+  ctx.fillStyle = '#c89b5c';
+  ctx.fillRect(150, laneY, 500, laneH);
+  // vetas de madera
+  ctx.strokeStyle = 'rgba(120,80,40,0.4)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<10;i++){
+    ctx.beginPath();
+    ctx.moveTo(150 + (i+0.5) * 50, laneY);
+    ctx.lineTo(150 + (i+0.5) * 50, laneY + laneH);
+    ctx.stroke();
+  }
+  // línea de fondo
+  ctx.fillStyle = '#8b5a2b';
+  ctx.fillRect(150, laneY, 500, 8);
+  // cunetas
+  ctx.fillStyle = '#3a2a1a';
+  ctx.fillRect(120, laneY, 30, laneH);
+  ctx.fillRect(650, laneY, 30, laneH);
+  // brillo pista
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.fillRect(150, laneY + 40, 500, 30);
+
+  // bolos
+  for(const el of miniGame.elements){
+    drawBowlingPin(el);
+  }
+
+  // bola
+  let bx = 410, by = 400;
+  if(miniGame.phase !== 'aim' && miniGame.projectilePos){
+    bx = miniGame.projectilePos.x;
+    by = miniGame.projectilePos.y;
+  }
+  drawBowlingBall(bx, by, 18);
+
+  if(miniGame.phase === 'aim'){
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = 'bold 16px "Trebuchet MS",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('👆 Toca el bolo con la respuesta correcta', W/2, 185);
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawBowlingPin(el){
+  ctx.save();
+  ctx.translate(el.cx, el.cy);
+  if(el.hit && miniGame.isCorrect && miniGame.phase === 'result'){
+    el.fall = Math.min(1, (miniGame.timer - 0) / 20);
+    ctx.rotate(el.fall * Math.PI * 0.5);
+  }
+  // cuerpo del bolo
+  const w = el.w, h = el.h;
+  ctx.fillStyle = '#f5f5f5';
+  ctx.beginPath();
+  ctx.moveTo(-w/2, h/2);
+  ctx.quadraticCurveTo(-w*0.55, 0, -w*0.28, -h*0.35);
+  ctx.quadraticCurveTo(-w*0.2, -h/2, 0, -h/2);
+  ctx.quadraticCurveTo(w*0.2, -h/2, w*0.28, -h*0.35);
+  ctx.quadraticCurveTo(w*0.55, 0, w/2, h/2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // cuello rojo
+  ctx.fillStyle = '#e04545';
+  ctx.fillRect(-w*0.24, -h*0.3, w*0.48, 5);
+  ctx.fillRect(-w*0.24, -h*0.2, w*0.48, 5);
+  // número
+  ctx.fillStyle = '#222';
+  ctx.font = 'bold 16px "Trebuchet MS",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(el.val, 0, 4);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.restore();
+}
+
+function drawBowlingBall(x, y, r){
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + r + 3, r * 0.95, 4, 0, 0, Math.PI*2);
+  ctx.fill();
+  const g = ctx.createRadialGradient(x - r*0.3, y - r*0.3, 2, x, y, r);
+  g.addColorStop(0, '#5a5a5a');
+  g.addColorStop(1, '#1a1a1a');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fill();
+  // agujeros
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(x - 5, y - 4, 2.4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + 4, y - 5, 2.4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + 1, y + 3, 2.4, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+/* --- ARCHERY --- */
+function drawMiniGameArchery(q){
+  // cielo
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0d2a4a');
+  g.addColorStop(0.5, '#3f7cb8');
+  g.addColorStop(1, '#7bc46f');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // colinas
+  ctx.fillStyle = 'rgba(40,90,50,0.7)';
+  ctx.beginPath();
+  ctx.arc(150, 400, 140, Math.PI, 0);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(600, 410, 180, Math.PI, 0);
+  ctx.fill();
+
+  // suelo
+  ctx.fillStyle = '#3a7a44';
+  ctx.fillRect(0, 380, W, H - 380);
+
+  // dianas
+  for(const el of miniGame.elements){
+    drawArcheryTarget(el);
+  }
+
+  // arco y arquero
+  drawArcher();
+
+  // flecha (vuelo)
+  if(miniGame.phase !== 'aim' && miniGame.projectilePos){
+    drawArrow(miniGame.projectilePos.x, miniGame.projectilePos.y, miniGame.target);
+  }
+
+  if(miniGame.phase === 'aim'){
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = 'bold 16px "Trebuchet MS",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('👆 Toca la diana con la respuesta correcta', W/2, 375);
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawArcheryTarget(el){
+  ctx.save();
+  ctx.translate(el.x, el.y);
+  // palo
+  ctx.fillStyle = '#8b5a2b';
+  ctx.fillRect(-3, 0, 6, 60);
+  // dianas
+  const colors = ['#ffffff', '#000000', '#3b82f6', '#ef4444', '#facc15'];
+  const radii = [el.r, el.r*0.8, el.r*0.6, el.r*0.4, el.r*0.2];
+  for(let i=0;i<colors.length;i++){
+    ctx.fillStyle = colors[i];
+    ctx.beginPath();
+    ctx.arc(0, 0, radii[i], 0, Math.PI*2);
+    ctx.fill();
+  }
+  // número (fondo oscuro)
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.beginPath();
+  ctx.arc(0, 0, el.r*0.55, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 28px "Trebuchet MS",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(el.val, 0, 2);
+
+  // flecha clavada si acierta
+  if(el.hit && miniGame.isCorrect && miniGame.phase === 'result'){
+    ctx.strokeStyle = '#8b4513';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(20, -20); ctx.lineTo(-2, 2); ctx.stroke();
+    ctx.fillStyle = '#d32f2f';
+    ctx.beginPath();
+    ctx.moveTo(20, -20); ctx.lineTo(24, -16); ctx.lineTo(22, -22); ctx.closePath();
+    ctx.fill();
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.restore();
+}
+
+function drawArcher(){
+  // arquero simplificado en la esquina inferior izquierda
+  const x = 70, y = 380;
+  // piernas
+  ctx.fillStyle = '#2b3a63';
+  ctx.fillRect(x - 10, y - 4, 8, 25);
+  ctx.fillRect(x + 2, y - 4, 8, 25);
+  // cuerpo
+  ctx.fillStyle = '#37a98b';
+  ctx.beginPath();
+  ctx.ellipse(x, y - 20, 12, 16, 0, 0, Math.PI*2);
+  ctx.fill();
+  // cabeza
+  ctx.fillStyle = '#ffdbac';
+  ctx.beginPath();
+  ctx.arc(x, y - 40, 10, 0, Math.PI*2);
+  ctx.fill();
+  // arco
+  ctx.strokeStyle = '#8b4513';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(x + 15, y - 30, 30, -Math.PI/2, Math.PI/2);
+  ctx.stroke();
+  // cuerda
+  ctx.strokeStyle = '#eee';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x + 15, y - 60);
+  ctx.lineTo(x + 5, y - 30);
+  ctx.lineTo(x + 15, y);
+  ctx.stroke();
+}
+
+function drawArrow(x, y, target){
+  ctx.save();
+  ctx.translate(x, y);
+  if(miniGame.projectile){
+    const p = miniGame.projectile;
+    const angle = Math.atan2(p.endY - p.startY, p.endX - p.startX);
+    // ajustar el ángulo por la caída del arco
+    const t = miniGame.timer / 32;
+    const tilt = Math.cos(t * Math.PI) * 0.6;
+    ctx.rotate(angle + tilt);
+  }
+  // palo
+  ctx.strokeStyle = '#8b4513';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-20, 0); ctx.lineTo(10, 0); ctx.stroke();
+  // punta
+  ctx.fillStyle = '#888';
+  ctx.beginPath();
+  ctx.moveTo(14, 0); ctx.lineTo(4, -5); ctx.lineTo(4, 5); ctx.closePath();
+  ctx.fill();
+  // plumas
+  ctx.fillStyle = '#d32f2f';
+  ctx.beginPath();
+  ctx.moveTo(-20, 0); ctx.lineTo(-14, -5); ctx.lineTo(-10, 0); ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-20, 0); ctx.lineTo(-14, 5); ctx.lineTo(-10, 0); ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/* --- QUIZ (canvas) --- */
+function drawMiniGameQuiz(q){
+  // fondo
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#1a2247');
+  g.addColorStop(1, '#2c387a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // portal
+  const cx = W/2, cy = 180;
+  ctx.save();
+  const pulse = 0.5 + 0.5 * Math.sin(game.frame * 0.05);
+  const gr = ctx.createRadialGradient(cx, cy, 10, cx, cy, 100);
+  gr.addColorStop(0, 'rgba(255,212,92,' + (0.5 + 0.3*pulse) + ')');
+  gr.addColorStop(1, 'rgba(255,212,92,0)');
+  ctx.fillStyle = gr;
+  ctx.fillRect(cx - 100, cy - 100, 200, 200);
+  ctx.strokeStyle = '#ffd45c';
+  ctx.lineWidth = 3;
+  for(let i=0;i<3;i++){
+    ctx.beginPath();
+    ctx.arc(cx, cy, 30 + i*15, game.frame*0.04 + i, game.frame*0.04 + i + 2.5);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // botones
+  for(const el of miniGame.elements){
+    let fill = 'rgba(60,80,180,0.85)';
+    let stroke = '#8da5ff';
+    if(el.hit && miniGame.isCorrect && miniGame.phase === 'result'){
+      fill = 'rgba(60,200,120,0.9)';
+      stroke = '#7dffb0';
+    } else if(el.hit && !miniGame.isCorrect && miniGame.phase === 'result'){
+      fill = 'rgba(220,80,80,0.9)';
+      stroke = '#ff9c9c';
+    }
+    ctx.fillStyle = fill;
+    rr(el.x, el.y, el.w, el.h, 16);
+    ctx.fill();
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    rr(el.x, el.y, el.w, el.h, 16);
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 34px "Trebuchet MS",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(el.val, el.cx, el.cy);
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+/* =========================================================
+   20. CONTROLES
    ========================================================= */
 document.addEventListener('keydown', function(e){
   const k = e.key;
   if(k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ArrowUp' || k === 'ArrowDown' || k === ' '){
     e.preventDefault();
+  }
+  // teclado en minijuego
+  if(game.mode === 'minigame'){
+    const n = parseInt(k, 10);
+    if(n >= 1 && n <= 4){ handleMiniGameKey(n - 1); return; }
+    return;
   }
   if(e.repeat) return;
   if(k === 'ArrowLeft'  || k === 'a' || k === 'A') input.left  = true;
@@ -1613,7 +2374,6 @@ function bindHold(el, onDown, onUp){
   el.addEventListener('pointerleave', function(){ onUp(); });
   el.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 }
-
 bindHold($('btnLeft'),  ()=>{ input.left  = true; }, ()=>{ input.left  = false; });
 bindHold($('btnRight'), ()=>{ input.right = true; }, ()=>{ input.right = false; });
 
@@ -1623,8 +2383,18 @@ $('btnJump').addEventListener('pointerdown', function(e){
 }, {passive:false});
 $('btnJump').addEventListener('contextmenu', e=>e.preventDefault());
 
+canvas.addEventListener('pointerdown', function(e){
+  if(game.mode !== 'minigame') return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width * W;
+  const y = (e.clientY - rect.top) / rect.height * H;
+  handleMiniGameTap(x, y);
+}, {passive:false});
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+
 /* =========================================================
-   19. BOTONES DE INTERFAZ
+   21. BOTONES DE INTERFAZ
    ========================================================= */
 $('btnPlay').addEventListener('click', function(){
   initAudio();
@@ -1671,14 +2441,29 @@ $('btnNext').addEventListener('click', function(){
   else startLevel(0);
   lastTime = 0; acc = 0;
 });
-
 $('btnReplay').addEventListener('click', function(){
   $('ovFinish').classList.add('hidden');
   startLevel(game.levelIndex);
   lastTime = 0; acc = 0;
 });
 
-/* pausa automática al cambiar de pestaña */
+// botones de práctica
+$('practiceGrid').addEventListener('click', function(e){
+  const btn = e.target.closest('button[data-mg]');
+  if(!btn) return;
+  initAudio();
+  const type = btn.getAttribute('data-mg');
+  $('ovWelcome').classList.add('hidden');
+  startMiniGame({
+    mode: 'practice',
+    returnTo: 'welcome',
+    type: type,
+    requiredCorrect: 3,
+    totalQuestions: 5
+  });
+  lastTime = 0; acc = 0;
+});
+
 document.addEventListener('visibilitychange', function(){
   if(document.hidden){
     input.left = input.right = false;
@@ -1691,7 +2476,7 @@ document.addEventListener('visibilitychange', function(){
 window.addEventListener('pagehide', saveState);
 
 /* =========================================================
-   20. ARRANQUE
+   22. ARRANQUE
    ========================================================= */
 function init(){
   level = buildLevel(state.world);
@@ -1715,7 +2500,6 @@ function init(){
 
   requestAnimationFrame(loop);
 }
-
 init();
 
 })();
