@@ -33,6 +33,7 @@
             background: #1b263b;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
         canvas {
             display: block;
@@ -41,7 +42,7 @@
             height: 100%;
             flex-grow: 1;
         }
-        /* UI Overlays */
+        /* Capas de Pantallas */
         .screen {
             position: absolute;
             top: 0;
@@ -61,13 +62,13 @@
             display: none !important;
         }
         h1 {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             color: #ffd166;
             margin-bottom: 10px;
             text-shadow: 2px 2px 0px #ef476f;
         }
         p {
-            font-size: 1.1rem;
+            font-size: 1rem;
             margin-bottom: 20px;
             color: #e0fbfc;
             max-width: 500px;
@@ -77,13 +78,13 @@
             color: #0d1b2a;
             border: none;
             padding: 12px 30px;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
             border-radius: 50px;
             cursor: pointer;
             box-shadow: 0 4px 0 #049a72;
             transition: transform 0.1s, box-shadow 0.1s;
-            margin: 8px;
+            margin: 6px;
         }
         .btn:active {
             transform: translateY(4px);
@@ -123,8 +124,8 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 120px;
-            display: none;
+            height: 110px;
+            display: flex;
             justify-content: space-between;
             padding: 15px 25px;
             z-index: 5;
@@ -136,8 +137,8 @@
             pointer-events: auto;
         }
         .t-btn {
-            width: 65px;
-            height: 65px;
+            width: 60px;
+            height: 60px;
             background: rgba(255, 255, 255, 0.3);
             border: 2px solid rgba(255, 255, 255, 0.6);
             border-radius: 50%;
@@ -153,55 +154,56 @@
             background: rgba(255, 255, 255, 0.6);
             transform: scale(0.95);
         }
-        /* Modal de Pregunta Matemática */
+
+        /* Ventana Modal Matemáticas (Capa Máxima) */
         #math-modal {
-            background: rgba(13, 27, 42, 0.98);
-            border: 4px solid #118ab2;
-            border-radius: 20px;
-            padding: 25px;
-            width: 90%;
-            max-width: 400px;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 20;
+            background: #0d1b2a;
+            border: 4px solid #118ab2;
+            border-radius: 20px;
+            padding: 20px;
+            width: 85%;
+            max-width: 360px;
+            z-index: 100; /* Prioridad máxima por encima de todo */
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.9);
+        }
+        #math-modal.hidden {
+            display: none !important;
         }
         #math-question {
-            font-size: 2rem;
+            font-size: 2.2rem;
             color: #ffd166;
-            margin: 15px 0;
+            margin: 10px 0 15px 0;
+            font-weight: bold;
         }
         .answers-grid {
-            display: grid;
-            grid-template-columns: 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 10px;
             width: 100%;
-            margin-top: 10px;
         }
         .ans-btn {
             background: #2b2d42;
-            border: 2px solid #8d99ae;
-            color: white;
+            border: 2px solid #06d6a0;
+            color: #ffffff;
             padding: 12px;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background 0.2s;
+            width: 100%;
+            touch-action: manipulation;
         }
-        .ans-btn:hover, .ans-btn:active {
-            background: #118ab2;
-            border-color: #ffd166;
-        }
-        @media (max-width: 768px) {
-            #touch-controls {
-                display: flex;
-            }
+        .ans-btn:active {
+            background: #06d6a0;
+            color: #0d1b2a;
         }
     </style>
 </head>
@@ -215,7 +217,6 @@
             <span id="hud-crystals">💎 0</span>
         </div>
         <div class="hud-group">
-            <span id="hud-lives">❤️ 3</span>
             <button class="btn" style="padding: 2px 10px; font-size: 0.9rem; pointer-events: auto;" onclick="Game.togglePause()">⏸</button>
         </div>
     </div>
@@ -256,7 +257,7 @@
         <button class="btn" onclick="Game.nextLevel()">Continuar Aventura</button>
     </div>
 
-    <!-- Pantalla de Derrota / Game Over -->
+    <!-- Pantalla de Game Over -->
     <div id="screen-gameover" class="screen hidden">
         <h1 style="color: #ef476f;">¡ÁNIMO!</h1>
         <p>La niebla ha cubierto el camino, pero puedes volver a intentarlo.</p>
@@ -273,17 +274,17 @@
 
     <!-- Modal de Desafío Matemático -->
     <div id="math-modal" class="hidden">
-        <h3 id="math-title">¡Puerta Numérica!</h3>
-        <p style="font-size: 0.9rem; margin-bottom: 5px;">Resuelve para continuar:</p>
+        <h3 style="color: #e0fbfc;">¡Puerta Numérica!</h3>
+        <p style="font-size: 0.9rem; margin-bottom: 5px; color: #a3b18a;">Resuelve para continuar:</p>
         <div id="math-question">3 × 4 = ?</div>
         <div class="answers-grid" id="math-answers">
-            <!-- Opciones inyectadas por JS -->
+            <!-- Botones inyectados dinámicamente -->
         </div>
     </div>
 </div>
 
 <script>
-// --- AUDIO SYSTEM (Web Audio API) ---
+// --- AUDIO SYSTEM ---
 const Sound = {
     ctx: null,
     init() {
@@ -311,8 +312,8 @@ const Sound = {
                 osc.stop(now + 0.15);
             } else if (type === 'coin') {
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(587.33, now); // D5
-                osc.frequency.setValueAtTime(880, now + 0.08); // A5
+                osc.frequency.setValueAtTime(587.33, now);
+                osc.frequency.setValueAtTime(880, now + 0.08);
                 gain.gain.setValueAtTime(0.3, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
                 osc.start(now);
@@ -335,13 +336,11 @@ const Sound = {
                 osc.start(now);
                 osc.stop(now + 0.3);
             }
-        } catch (e) {
-            console.warn("Audio error:", e);
-        }
+        } catch (e) {}
     }
 };
 
-// --- GAME STATE & STORAGE ---
+// --- ALMACENAMIENTO ---
 const Storage = {
     key: 'mision_multiplica_save_v1',
     load() {
@@ -358,23 +357,22 @@ const Storage = {
     }
 };
 
-// --- LEVEL DESIGN & DATA ---
+// --- NIVEL ---
 const LevelData = {
     1: {
         name: "El Bosque de los Unos",
         width: 2400,
         height: 450,
         platforms: [
-            {x: 0, y: 380, w: 900, h: 70, type: 'ground'},
-            {x: 1000, y: 380, w: 800, h: 70, type: 'ground'},
-            {x: 1900, y: 380, w: 600, h: 70, type: 'ground'},
-            // Plataformas aéreas
-            {x: 350, y: 280, w: 120, h: 20, type: 'plat'},
-            {x: 550, y: 210, w: 120, h: 20, type: 'plat'},
-            {x: 800, y: 280, w: 140, h: 20, type: 'plat'},
-            {x: 1200, y: 260, w: 150, h: 20, type: 'plat'},
-            {x: 1500, y: 200, w: 150, h: 20, type: 'plat'},
-            {x: 1750, y: 280, w: 100, h: 20, type: 'plat'}
+            {x: 0, y: 380, w: 900, h: 70},
+            {x: 1000, y: 380, w: 800, h: 70},
+            {x: 1900, y: 380, w: 600, h: 70},
+            {x: 350, y: 280, w: 120, h: 20},
+            {x: 550, y: 210, w: 120, h: 20},
+            {x: 800, y: 280, w: 140, h: 20},
+            {x: 1200, y: 260, w: 150, h: 20},
+            {x: 1500, y: 200, w: 150, h: 20},
+            {x: 1750, y: 280, w: 100, h: 20}
         ],
         crystals: [
             {x: 380, y: 230, collected: false},
@@ -388,17 +386,17 @@ const LevelData = {
             {x: 600, y: 340, w: 30, h: 40, minX: 550, maxX: 750, speed: 1.5, dir: 1}
         ],
         doors: [
-            {x: 1850, y: 300, w: 40, h: 80, open: false, factor1: 2, factor2: 3}
+            {x: 1850, y: 300, w: 40, h: 80, open: false, factor1: 3, factor2: 4}
         ],
         goal: {x: 2300, y: 300, w: 40, h: 80}
     }
 };
 
-// --- MAIN GAME ENGINE ---
+// --- MOTOR DE JUEGO ---
 const Game = {
     canvas: null,
     ctx: null,
-    state: 'TITLE', // TITLE, PLAYING, PAUSE, MATH, VICTORY, GAMEOVER, PROGRESS
+    state: 'TITLE',
     saveData: null,
     keys: {},
     touch: { left: false, right: false, jump: false },
@@ -406,11 +404,10 @@ const Game = {
     player: {
         x: 100, y: 200, w: 30, h: 44,
         vx: 0, vy: 0, speed: 4, jumpForce: -11, gravity: 0.5,
-        grounded: false, facing: 1, animTimer: 0
+        grounded: false, facing: 1
     },
     currentLevel: 1,
     levelData: null,
-    activeMathCallback: null,
 
     init() {
         this.canvas = document.getElementById('gameCanvas');
@@ -438,13 +435,14 @@ const Game = {
             if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = false;
         });
 
-        // Controles táctiles
         const bindTouch = (id, key) => {
             const el = document.getElementById(id);
-            el.addEventListener('touchstart', (e) => { this.touch[key] = true; el.classList.add('active'); e.preventDefault(); });
-            el.addEventListener('touchend', (e) => { this.touch[key] = false; el.classList.remove('active'); e.preventDefault(); });
-            el.addEventListener('mousedown', (e) => { this.touch[key] = true; });
-            el.addEventListener('mouseup', (e) => { this.touch[key] = false; });
+            const start = (e) => { this.touch[key] = true; el.classList.add('active'); e.preventDefault(); };
+            const end = (e) => { this.touch[key] = false; el.classList.remove('active'); e.preventDefault(); };
+            el.addEventListener('touchstart', start, {passive: false});
+            el.addEventListener('touchend', end, {passive: false});
+            el.addEventListener('mousedown', start);
+            el.addEventListener('mouseup', end);
         };
         bindTouch('btn-left', 'left');
         bindTouch('btn-right', 'right');
@@ -455,9 +453,7 @@ const Game = {
     },
 
     loadLevel(lvlNum) {
-        const raw = LevelData[lvlNum];
-        // Copia profunda para restablecer coleccionables y enemigos
-        this.levelData = JSON.parse(JSON.stringify(raw));
+        this.levelData = JSON.parse(JSON.stringify(LevelData[lvlNum]));
         this.player.x = 100;
         this.player.y = 200;
         this.player.vx = 0;
@@ -483,7 +479,7 @@ const Game = {
     },
 
     returnToTitle() {
-        ['screen-pause', 'screen-victory', 'screen-gameover', 'screen-progress', 'hud'].forEach(id => {
+        ['screen-pause', 'screen-victory', 'screen-gameover', 'screen-progress', 'hud', 'math-modal'].forEach(id => {
             document.getElementById(id).classList.add('hidden');
         });
         document.getElementById('screen-title').classList.remove('hidden');
@@ -511,9 +507,9 @@ const Game = {
         const pct = total > 0 ? Math.round((s.correct / total) * 100) : 0;
         document.getElementById('progress-details').innerHTML = `
             Cristales conseguidos: <strong>${this.saveData.crystals}</strong><br>
-            Preguntas aciertas: <strong>${s.correct}</strong><br>
-            Preguntas repasadas: <strong>${s.wrong}</strong><br>
-            Precisión global: <strong>${pct}%</strong>
+            Preguntas acertadas: <strong>${s.correct}</strong><br>
+            Errores / Repasos: <strong>${s.wrong}</strong><br>
+            Precisión: <strong>${pct}%</strong>
         `;
         document.getElementById('screen-title').classList.add('hidden');
         document.getElementById('screen-progress').classList.remove('hidden');
@@ -531,7 +527,6 @@ const Game = {
         const correct = f1 * f2;
         document.getElementById('math-question').innerText = `${f1} × ${f2} = ?`;
         
-        // Generar respuestas únicas
         let options = [correct];
         while(options.length < 3) {
             let offset = (Math.floor(Math.random() * 4) + 1) * (Math.random() < 0.5 ? 1 : -1);
@@ -548,7 +543,9 @@ const Game = {
             const btn = document.createElement('button');
             btn.className = 'ans-btn';
             btn.innerText = opt;
-            btn.onclick = () => {
+            
+            const handleAnswer = (e) => {
+                e.preventDefault();
                 if (opt === correct) {
                     Sound.play('correct');
                     this.saveData.stats.correct++;
@@ -561,9 +558,16 @@ const Game = {
                     this.saveData.stats.wrong++;
                     Storage.save(this.saveData);
                     btn.style.borderColor = '#ef476f';
-                    setTimeout(() => { btn.style.borderColor = '#8d99ae'; }, 500);
+                    btn.style.background = '#ef476f';
+                    setTimeout(() => { 
+                        btn.style.borderColor = '#06d6a0'; 
+                        btn.style.background = '#2b2d42';
+                    }, 500);
                 }
             };
+
+            btn.addEventListener('touchstart', handleAnswer, {passive: false});
+            btn.addEventListener('click', handleAnswer);
             container.appendChild(btn);
         });
 
@@ -573,7 +577,6 @@ const Game = {
     update() {
         if (this.state !== 'PLAYING') return;
 
-        // Movimiento horizontal
         let moveDir = 0;
         if (this.keys.left || this.touch.left) moveDir = -1;
         if (this.keys.right || this.touch.right) moveDir = 1;
@@ -581,52 +584,42 @@ const Game = {
         this.player.vx = moveDir * this.player.speed;
         if (moveDir !== 0) this.player.facing = moveDir;
 
-        // Salto táctil
         if (this.touch.jump && this.player.grounded) {
             this.player.vy = this.player.jumpForce;
             this.player.grounded = false;
             Sound.play('jump');
-            this.touch.jump = false; // Consumir salto táctil
+            this.touch.jump = false;
         }
 
-        // Aplicar Gravedad
         this.player.vy += this.player.gravity;
 
-        // Mover eje X y colisiones
         this.player.x += this.player.vx;
         this.checkCollisionsX();
 
-        // Mover eje Y y colisiones
         this.player.y += this.player.vy;
         this.player.grounded = false;
         this.checkCollisionsY();
 
-        // Límites del nivel
         if (this.player.x < 0) this.player.x = 0;
         if (this.player.x > this.levelData.width - this.player.w) this.player.x = this.levelData.width - this.player.w;
 
-        // Caída al vacio (Game Over)
         if (this.player.y > this.canvas.height) {
             this.state = 'GAMEOVER';
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('screen-gameover').classList.remove('hidden');
         }
 
-        // Actualizar Enemigos
         this.levelData.enemies.forEach(en => {
             en.x += en.speed * en.dir;
             if (en.x < en.minX || en.x > en.maxX) en.dir *= -1;
 
-            // Colisión con jugador
             if (this.player.x < en.x + en.w && this.player.x + this.player.w > en.x &&
                 this.player.y < en.y + en.h && this.player.y + this.player.h > en.y) {
-                // Daño / Rebote simple
                 this.player.vy = -7;
                 Sound.play('wrong');
             }
         });
 
-        // Coleccionables (Cristales)
         this.levelData.crystals.forEach(c => {
             if (!c.collected && Math.hypot((this.player.x + this.player.w/2) - (c.x + 10), (this.player.y + this.player.h/2) - (c.y + 10)) < 25) {
                 c.collected = true;
@@ -636,11 +629,9 @@ const Game = {
             }
         });
 
-        // Puertas Numéricas
         this.levelData.doors.forEach(d => {
             if (!d.open && this.player.x < d.x + d.w + 10 && this.player.x + this.player.w > d.x - 10 &&
                 this.player.y < d.y + d.h && this.player.y + this.player.h > d.y) {
-                // Bloquear jugador y abrir modal matemático
                 this.player.x -= this.player.vx * 2;
                 this.triggerMath(d.factor1, d.factor2, () => {
                     d.open = true;
@@ -648,7 +639,6 @@ const Game = {
             }
         });
 
-        // Meta del nivel
         const goal = this.levelData.goal;
         if (this.player.x < goal.x + goal.w && this.player.x + this.player.w > goal.x &&
             this.player.y < goal.y + goal.h && this.player.y + this.player.h > goal.y) {
@@ -657,14 +647,12 @@ const Game = {
             document.getElementById('screen-victory').classList.remove('hidden');
         }
 
-        // Seguir cámara
         this.camera.x = this.player.x - this.canvas.width / 3;
         if (this.camera.x < 0) this.camera.x = 0;
         if (this.camera.x > this.levelData.width - this.canvas.width) {
             this.camera.x = this.levelData.width - this.canvas.width;
         }
 
-        // Actualizar HUD
         document.getElementById('hud-crystals').innerText = `💎 ${this.saveData.crystals}`;
         document.getElementById('hud-world').innerText = this.levelData.name;
     },
@@ -677,7 +665,6 @@ const Game = {
                 this.player.vx = 0;
             }
         });
-        // Puertas cerradas actúan como pared
         this.levelData.doors.forEach(d => {
             if (!d.open && this.checkRectCollision(this.player, d)) {
                 if (this.player.vx > 0) this.player.x = d.x - this.player.w;
@@ -690,11 +677,11 @@ const Game = {
     checkCollisionsY() {
         this.levelData.platforms.forEach(p => {
             if (this.checkRectCollision(this.player, p)) {
-                if (this.player.vy > 0) { // Cayendo
+                if (this.player.vy > 0) {
                     this.player.y = p.y - this.player.h;
                     this.player.vy = 0;
                     this.player.grounded = true;
-                } else if (this.player.vy < 0) { // Saltando
+                } else if (this.player.vy < 0) {
                     this.player.y = p.y + p.h;
                     this.player.vy = 0;
                 }
@@ -725,7 +712,7 @@ const Game = {
         this.ctx.save();
         this.ctx.translate(-this.camera.x, 0);
 
-        // Fondo Parallax simple (Montañas lejanas)
+        // Fondo
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
         this.ctx.beginPath();
         this.ctx.moveTo(this.camera.x * 0.5, 380);
@@ -735,15 +722,15 @@ const Game = {
         }
         this.ctx.fill();
 
-        // Dibujar Plataformas
+        // Plataformas
         this.levelData.platforms.forEach(p => {
             this.ctx.fillStyle = '#2b2d42';
             this.ctx.fillRect(p.x, p.y, p.w, p.h);
             this.ctx.fillStyle = '#06d6a0';
-            this.ctx.fillRect(p.x, p.y, p.w, 6); // Borde superior césped
+            this.ctx.fillRect(p.x, p.y, p.w, 6);
         });
 
-        // Dibujar Puertas Numéricas
+        // Puertas
         this.levelData.doors.forEach(d => {
             if (!d.open) {
                 this.ctx.fillStyle = '#ef476f';
@@ -758,7 +745,7 @@ const Game = {
             }
         });
 
-        // Dibujar Meta
+        // Meta
         const goal = this.levelData.goal;
         this.ctx.fillStyle = '#ffd166';
         this.ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
@@ -766,7 +753,7 @@ const Game = {
         this.ctx.font = 'bold 12px sans-serif';
         this.ctx.fillText("META", goal.x + 5, goal.y + 45);
 
-        // Dibujar Cristales
+        // Cristales
         this.levelData.crystals.forEach(c => {
             if (!c.collected) {
                 this.ctx.fillStyle = '#ffd166';
@@ -779,21 +766,19 @@ const Game = {
             }
         });
 
-        // Dibujar Enemigos
+        // Enemigos
         this.levelData.enemies.forEach(en => {
             this.ctx.fillStyle = '#e63946';
             this.ctx.fillRect(en.x, en.y, en.w, en.h);
-            // Ojos
             this.ctx.fillStyle = '#ffffff';
             let eyeX = en.dir > 0 ? en.x + 18 : en.x + 6;
             this.ctx.fillRect(eyeX, en.y + 8, 6, 6);
         });
 
-        // Dibujar Protagonista
+        // Jugador
         const p = this.player;
         this.ctx.fillStyle = '#4cc9f0';
         this.ctx.fillRect(p.x, p.y, p.w, p.h);
-        // Ojos del personaje según dirección
         this.ctx.fillStyle = '#0d1b2a';
         let pupilX = p.facing > 0 ? p.x + 18 : p.x + 6;
         this.ctx.fillRect(pupilX, p.y + 10, 6, 6);
