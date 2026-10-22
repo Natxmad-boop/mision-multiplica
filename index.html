@@ -40,7 +40,7 @@
             background: #4158D0;
             padding: 15px;
             text-align: center;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: #ffd166;
             text-shadow: 2px 2px 0px #0d1b2a;
@@ -54,31 +54,32 @@
             align-items: center;
             padding: 20px;
             text-align: center;
+            overflow-y: auto;
         }
         .hidden {
             display: none !important;
         }
         h2 {
-            font-size: 1.8rem;
-            margin-bottom: 15px;
+            font-size: 1.6rem;
+            margin-bottom: 10px;
             color: #ffd166;
         }
         p {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
+            font-size: 1rem;
+            margin-bottom: 15px;
             color: #e0fbfc;
         }
         .btn {
             background-color: #06d6a0;
             color: #0d1b2a;
             border: none;
-            padding: 14px 30px;
-            font-size: 1.2rem;
+            padding: 12px 25px;
+            font-size: 1.1rem;
             font-weight: bold;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 5px 0 #049a72;
-            margin: 10px;
+            box-shadow: 0 4px 0 #049a72;
+            margin: 8px;
             width: 80%;
             max-width: 280px;
             transition: transform 0.1s;
@@ -89,8 +90,29 @@
         }
         .btn-secondary {
             background-color: #118ab2;
-            box-shadow: 0 5px 0 #0b5c77;
+            box-shadow: 0 4px 0 #0b5c77;
             color: white;
+        }
+        .speed-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .speed-btn {
+            background: #2b2d42;
+            border: 2px solid #8d99ae;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .speed-btn.active {
+            background: #06d6a0;
+            color: #0d1b2a;
+            border-color: #ffd166;
         }
         /* Zona de juego / Concurso */
         .hud-concurso {
@@ -98,17 +120,17 @@
             justify-content: space-between;
             width: 100%;
             padding: 10px 20px;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
             background: rgba(0,0,0,0.3);
             border-bottom: 2px solid #118ab2;
         }
         .panel-pregunta {
-            font-size: 2.8rem;
+            font-size: 2.5rem;
             color: #ffd166;
-            margin: 20px 0;
+            margin: 15px 0;
             background: #0d1b2a;
-            padding: 20px 40px;
+            padding: 15px 30px;
             border-radius: 15px;
             border: 3px solid #118ab2;
             letter-spacing: 2px;
@@ -116,7 +138,7 @@
         .grid-opciones {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 12px;
             width: 100%;
             max-width: 400px;
         }
@@ -124,42 +146,44 @@
             background: #2b2d42;
             border: 3px solid #8d99ae;
             color: white;
-            padding: 20px;
-            font-size: 1.5rem;
+            padding: 16px;
+            font-size: 1.3rem;
             font-weight: bold;
-            border-radius: 15px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: 0.2s;
-        }
-        .opcion-btn:active {
-            background: #118ab2;
-            border-color: #ffd166;
         }
         .timer-bar {
             width: 100%;
             height: 8px;
             background: #ef476f;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             border-radius: 4px;
-            transition: width 0.1s linear;
         }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <header>Misión Multiplica: Edición Concurso</header>
+    <header>Misión Multiplica: Edición Cifras</header>
 
     <!-- Pantalla de Inicio -->
     <div id="screen-home" class="screen">
-        <h2>¡Bienvenidos al Gran Concurso!</h2>
-        <p>Demuestra tu agilidad mental resolviendo retos matemáticos al estilo de los grandes concursos de televisión.</p>
-        <button class="btn" onclick="Game.startMode('tablas')">Tablas Relámpago</button>
-        <button class="btn btn-secondary" onclick="Game.startMode('cifras')">Cifras Exactas</button>
-        <button class="btn" style="background:#ef476f; box-shadow: 0 5px 0 #b7094c;" onclick="Game.showStats()">Estadísticas</button>
+        <h2>¡Gran Concurso Mental!</h2>
+        <p>Elige tu ritmo y pon a prueba las matemáticas.</p>
+        
+        <p style="margin-bottom: 5px; font-size: 0.9rem; color: #ffd166;">Selecciona la velocidad del tiempo:</p>
+        <div class="speed-selector">
+            <button class="speed-btn active" id="spd-1" onclick="Game.setSpeed(1)">Muy Lento (Tranquilo)</button>
+            <button class="speed-btn" id="spd-2" onclick="Game.setSpeed(2)">Normal</button>
+            <button class="speed-btn" id="spd-3" onclick="Game.setSpeed(3)">Rápido (Reto)</button>
+        </div>
+
+        <button class="btn" onclick="Game.startMode('tablas')">Tablas de Multiplicar</button>
+        <button class="btn btn-secondary" onclick="Game.startMode('cifras')">Cifras Exactas (Combinadas)</button>
+        <button class="btn" style="background:#ef476f; box-shadow: 0 4px 0 #b7094c;" onclick="Game.showStats()">Estadísticas</button>
     </div>
 
-    <!-- Pantalla de Juego / Concurso -->
+    <!-- Pantalla de Juego -->
     <div id="screen-game" class="screen hidden" style="justify-content: flex-start; padding-top: 10px;">
         <div class="hud-concurso">
             <span id="txt-score">Puntos: 0</span>
@@ -167,17 +191,15 @@
         </div>
         <div class="timer-bar" id="timer-bar"></div>
         <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%;">
-            <p id="txt-instruccion" style="color: #06d6a0; font-weight: bold;">¿Cuánto es?</p>
+            <p id="txt-instruccion" style="color: #06d6a0; font-weight: bold;">Calcula sin prisa:</p>
             <div class="panel-pregunta" id="txt-pregunta">7 × 8</div>
-            <div class="grid-opciones" id="grid-opciones">
-                <!-- Botones de respuesta generados dinámicamente -->
-            </div>
+            <div class="grid-opciones" id="grid-opciones"></div>
         </div>
     </div>
 
-    <!-- Pantalla de Resultados / Fin de Partida -->
+    <!-- Pantalla de Resultados -->
     <div id="screen-result" class="screen hidden">
-        <h2 id="res-titulo">¡Concurso Finalizado!</h2>
+        <h2 id="res-titulo">¡Concurso Terminado!</h2>
         <p id="res-texto">Has conseguido una puntuación fantástica.</p>
         <button class="btn" onclick="Game.returnHome()">Menú Principal</button>
     </div>
@@ -191,7 +213,6 @@
 </div>
 
 <script>
-// Sistema de Audio Web Audio API
 const Sound = {
     ctx: null,
     init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
@@ -224,13 +245,13 @@ const Sound = {
 };
 
 const Storage = {
-    key: 'mision_multiplica_concurso_v1',
+    key: 'mision_multiplica_concurso_v2',
     load() {
         try {
             const data = localStorage.getItem(this.key);
             if (data) return JSON.parse(data);
         } catch(e){}
-        return { points: 0, gamesPlayed: 0, correctAnswers: 0 };
+        return { points: 0, gamesPlayed: 0 };
     },
     save(st) {
         try { localStorage.setItem(this.key, JSON.stringify(st)); } catch(e){}
@@ -239,12 +260,21 @@ const Storage = {
 
 const Game = {
     mode: 'tablas',
+    speedLevel: 1, // 1 = Muy lento, 2 = Normal, 3 = Rápido
     score: 0,
     round: 1,
     maxRounds: 10,
     currentAnswer: 0,
     timerInterval: null,
     timeLeft: 100,
+
+    setSpeed(lvl) {
+        this.speedLevel = lvl;
+        document.querySelectorAll('.speed-btn').forEach((b, index) => {
+            if (index + 1 === lvl) b.classList.add('active');
+            else b.classList.remove('active');
+        });
+    },
 
     startMode(mode) {
         this.mode = mode;
@@ -266,16 +296,14 @@ const Game = {
         let f1, f2, questionText, correctAnswer;
 
         if (this.mode === 'tablas') {
-            f1 = Math.floor(Math.random() * 9) + 2; // Del 2 al 10
+            f1 = Math.floor(Math.random() * 9) + 2;
             f2 = Math.floor(Math.random() * 9) + 2;
             correctAnswer = f1 * f2;
             questionText = `${f1} × ${f2}`;
-            document.getElementById('txt-instruccion').innerText = "¡Calcula rápido el resultado!";
+            document.getElementById('txt-instruccion').innerText = "Tómate tu tiempo y calcula:";
         } else {
-            // Modo Cifras / Operaciones combinadas tipo concurso
             const opType = Math.random();
             if (opType < 0.5) {
-                // Suma y multiplicación combinada (ej: (a * b) + c)
                 let a = Math.floor(Math.random() * 6) + 2;
                 let b = Math.floor(Math.random() * 6) + 2;
                 let c = Math.floor(Math.random() * 10) + 1;
@@ -288,12 +316,11 @@ const Game = {
                 correctAnswer = (a * b) - c;
                 questionText = `(${a} × ${b}) - ${c}`;
             }
-            document.getElementById('txt-instruccion').innerText = "¡Resuelve la cifra exacta!";
+            document.getElementById('txt-instruccion').innerText = "Resuelve la cifra exacta:";
         }
 
         this.currentAnswer = correctAnswer;
         
-        // Generar opciones de respuesta únicas
         let options = [correctAnswer];
         while(options.length < 4) {
             let offset = (Math.floor(Math.random() * 5) + 1) * (Math.random() < 0.5 ? 1 : -1);
@@ -340,9 +367,16 @@ const Game = {
         this.timeLeft = 100;
         const bar = document.getElementById('timer-bar');
         clearInterval(this.timerInterval);
+
+        // Ajustar la velocidad según lo que el usuario haya seleccionado en el menú
+        // Nivel 1 = Muy Lento (resta 0.5 por tick), Nivel 2 = Normal (1), Nivel 3 = Rápido (2)
+        let decrement = 0.5;
+        if (this.speedLevel === 2) decrement = 1.0;
+        if (this.speedLevel === 3) decrement = 2.0;
+
         this.timerInterval = setInterval(() => {
-            this.timeLeft -= 2;
-            bar.style.width = this.timeLeft + '%';
+            this.timeLeft -= decrement;
+            bar.style.width = Math.max(0, this.timeLeft) + '%';
             if (this.timeLeft <= 0) {
                 clearInterval(this.timerInterval);
                 Sound.play('wrong');
@@ -357,7 +391,7 @@ const Game = {
         document.getElementById('screen-game').classList.add('hidden');
         document.getElementById('screen-result').classList.remove('hidden');
         document.getElementById('res-titulo').innerText = "¡Concurso Terminado!";
-        document.getElementById('res-texto').innerText = `Has conseguido ${this.score} puntos en total. ¡Excelente trabajo mental!`;
+        document.getElementById('res-texto').innerText = `Has conseguido ${this.score} puntos. ¡Gran trabajo mental!`;
 
         let st = Storage.load();
         st.points += this.score;
@@ -369,7 +403,7 @@ const Game = {
         let st = Storage.load();
         document.getElementById('stats-content').innerHTML = `
             Partidas jugadas: <strong>${st.gamesPlayed}</strong><br>
-            Puntuación acumulada: <strong>${st.points} pts</strong>
+            Puntuación total: <strong>${st.points} pts</strong>
         `;
         document.getElementById('screen-home').classList.add('hidden');
         document.getElementById('screen-stats').classList.remove('hidden');
