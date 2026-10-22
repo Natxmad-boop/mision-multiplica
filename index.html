@@ -28,7 +28,7 @@
             width: 100%;
             max-width: 600px;
             height: 100%;
-            max-height: 700px;
+            max-height: 750px;
             background: #1b263b;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             display: flex;
@@ -38,9 +38,9 @@
         }
         header {
             background: #4158D0;
-            padding: 15px;
+            padding: 12px;
             text-align: center;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: bold;
             color: #ffd166;
             text-shadow: 2px 2px 0px #0d1b2a;
@@ -50,9 +50,9 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             overflow-y: auto;
         }
@@ -60,28 +60,67 @@
             display: none !important;
         }
         h2 {
-            font-size: 1.6rem;
-            margin-bottom: 10px;
+            font-size: 1.5rem;
+            margin-bottom: 8px;
             color: #ffd166;
         }
         p {
-            font-size: 1rem;
-            margin-bottom: 15px;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
             color: #e0fbfc;
         }
+        
+        /* Caja de Configuración de Velocidad */
+        .config-box {
+            background: #0d1b2a;
+            border: 2px solid #118ab2;
+            border-radius: 15px;
+            padding: 12px;
+            width: 100%;
+            max-width: 380px;
+            margin-bottom: 15px;
+        }
+        .config-title {
+            font-size: 0.9rem;
+            color: #ffd166;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .speed-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .speed-btn {
+            background: #2b2d42;
+            border: 2px solid #8d99ae;
+            color: white;
+            padding: 10px 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        .speed-btn.active {
+            background: #06d6a0;
+            color: #0d1b2a;
+            border-color: #ffd166;
+        }
+
         .btn {
             background-color: #06d6a0;
             color: #0d1b2a;
             border: none;
-            padding: 12px 25px;
+            padding: 14px 20px;
             font-size: 1.1rem;
             font-weight: bold;
             border-radius: 50px;
             cursor: pointer;
             box-shadow: 0 4px 0 #049a72;
-            margin: 8px;
-            width: 80%;
-            max-width: 280px;
+            margin: 6px 0;
+            width: 100%;
+            max-width: 320px;
             transition: transform 0.1s;
         }
         .btn:active {
@@ -93,40 +132,20 @@
             box-shadow: 0 4px 0 #0b5c77;
             color: white;
         }
-        .speed-selector {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .speed-btn {
-            background: #2b2d42;
-            border: 2px solid #8d99ae;
-            color: white;
-            padding: 8px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .speed-btn.active {
-            background: #06d6a0;
-            color: #0d1b2a;
-            border-color: #ffd166;
-        }
-        /* Zona de juego / Concurso */
+
+        /* Zona de Juego */
         .hud-concurso {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            padding: 10px 20px;
+            padding: 10px 15px;
             font-size: 1.1rem;
             font-weight: bold;
             background: rgba(0,0,0,0.3);
             border-bottom: 2px solid #118ab2;
         }
         .panel-pregunta {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             color: #ffd166;
             margin: 15px 0;
             background: #0d1b2a;
@@ -134,30 +153,33 @@
             border-radius: 15px;
             border: 3px solid #118ab2;
             letter-spacing: 2px;
+            font-weight: bold;
         }
         .grid-opciones {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
         }
         .opcion-btn {
             background: #2b2d42;
-            border: 3px solid #8d99ae;
+            border: 3px solid #06d6a0;
             color: white;
-            padding: 16px;
-            font-size: 1.3rem;
+            padding: 18px;
+            font-size: 1.4rem;
             font-weight: bold;
-            border-radius: 12px;
+            border-radius: 15px;
             cursor: pointer;
+            touch-action: manipulation;
         }
         .timer-bar {
             width: 100%;
-            height: 8px;
+            height: 10px;
             background: #ef476f;
-            margin-bottom: 15px;
-            border-radius: 4px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            transition: width 0.1s linear;
         }
     </style>
 </head>
@@ -169,13 +191,17 @@
     <!-- Pantalla de Inicio -->
     <div id="screen-home" class="screen">
         <h2>¡Gran Concurso Mental!</h2>
-        <p>Elige tu ritmo y pon a prueba las matemáticas.</p>
+        <p>Aprende las tablas sin agobios y a tu ritmo.</p>
         
-        <p style="margin-bottom: 5px; font-size: 0.9rem; color: #ffd166;">Selecciona la velocidad del tiempo:</p>
-        <div class="speed-selector">
-            <button class="speed-btn active" id="spd-1" onclick="Game.setSpeed(1)">Muy Lento (Tranquilo)</button>
-            <button class="speed-btn" id="spd-2" onclick="Game.setSpeed(2)">Normal</button>
-            <button class="speed-btn" id="spd-3" onclick="Game.setSpeed(3)">Rápido (Reto)</button>
+        <!-- Caja de Configuración de Tiempo -->
+        <div class="config-box">
+            <div class="config-title">⏱️ Elige la velocidad del tiempo:</div>
+            <div class="speed-options">
+                <button class="speed-btn active" id="spd-0" onclick="Game.setSpeed(0)">🐢 Sin Tiempo</button>
+                <button class="speed-btn" id="spd-1" onclick="Game.setSpeed(1)">🚶 Muy Lento</button>
+                <button class="speed-btn" id="spd-2" onclick="Game.setSpeed(2)">🏃 Normal</button>
+                <button class="speed-btn" id="spd-3" onclick="Game.setSpeed(3)">⚡ Rápido</button>
+            </div>
         </div>
 
         <button class="btn" onclick="Game.startMode('tablas')">Tablas de Multiplicar</button>
@@ -184,30 +210,30 @@
     </div>
 
     <!-- Pantalla de Juego -->
-    <div id="screen-game" class="screen hidden" style="justify-content: flex-start; padding-top: 10px;">
+    <div id="screen-game" class="screen hidden" style="padding-top: 0;">
         <div class="hud-concurso">
             <span id="txt-score">Puntos: 0</span>
             <span id="txt-round">Ronda: 1/10</span>
         </div>
         <div class="timer-bar" id="timer-bar"></div>
         <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%;">
-            <p id="txt-instruccion" style="color: #06d6a0; font-weight: bold;">Calcula sin prisa:</p>
+            <p id="txt-instruccion" style="color: #06d6a0; font-weight: bold; font-size: 1.1rem;">Resuelve con calma:</p>
             <div class="panel-pregunta" id="txt-pregunta">7 × 8</div>
             <div class="grid-opciones" id="grid-opciones"></div>
         </div>
     </div>
 
     <!-- Pantalla de Resultados -->
-    <div id="screen-result" class="screen hidden">
+    <div id="screen-result" class="screen hidden" style="justify-content: center;">
         <h2 id="res-titulo">¡Concurso Terminado!</h2>
-        <p id="res-texto">Has conseguido una puntuación fantástica.</p>
-        <button class="btn" onclick="Game.returnHome()">Menú Principal</button>
+        <p id="res-texto" style="font-size: 1.2rem; margin: 20px 0;">Has conseguido una puntuación fantástica.</p>
+        <button class="btn" onclick="Game.returnHome()">Volver al Menú</button>
     </div>
 
     <!-- Pantalla de Estadísticas -->
-    <div id="screen-stats" class="screen hidden">
+    <div id="screen-stats" class="screen hidden" style="justify-content: center;">
         <h2>Tus Estadísticas</h2>
-        <p id="stats-content">Cargando...</p>
+        <p id="stats-content" style="font-size: 1.2rem; line-height: 1.8;">Cargando...</p>
         <button class="btn btn-secondary" onclick="Game.returnHome()">Volver</button>
     </div>
 </div>
@@ -245,7 +271,7 @@ const Sound = {
 };
 
 const Storage = {
-    key: 'mision_multiplica_concurso_v2',
+    key: 'mision_multiplica_concurso_v3',
     load() {
         try {
             const data = localStorage.getItem(this.key);
@@ -260,7 +286,7 @@ const Storage = {
 
 const Game = {
     mode: 'tablas',
-    speedLevel: 1, // 1 = Muy lento, 2 = Normal, 3 = Rápido
+    speedLevel: 0, // 0 = Sin tiempo, 1 = Muy lento, 2 = Normal, 3 = Rápido
     score: 0,
     round: 1,
     maxRounds: 10,
@@ -271,7 +297,7 @@ const Game = {
     setSpeed(lvl) {
         this.speedLevel = lvl;
         document.querySelectorAll('.speed-btn').forEach((b, index) => {
-            if (index + 1 === lvl) b.classList.add('active');
+            if (index === lvl) b.classList.add('active');
             else b.classList.remove('active');
         });
     },
@@ -300,7 +326,7 @@ const Game = {
             f2 = Math.floor(Math.random() * 9) + 2;
             correctAnswer = f1 * f2;
             questionText = `${f1} × ${f2}`;
-            document.getElementById('txt-instruccion').innerText = "Tómate tu tiempo y calcula:";
+            document.getElementById('txt-instruccion').innerText = "Resuelve la multiplicación:";
         } else {
             const opType = Math.random();
             if (opType < 0.5) {
@@ -339,6 +365,7 @@ const Game = {
             const btn = document.createElement('button');
             btn.className = 'opcion-btn';
             btn.innerText = opt;
+            
             const selectAnswer = (e) => {
                 e.preventDefault();
                 clearInterval(this.timerInterval);
@@ -346,6 +373,7 @@ const Game = {
                     Sound.play('correct');
                     this.score += 100;
                     btn.style.background = '#06d6a0';
+                    btn.style.color = '#0d1b2a';
                 } else {
                     Sound.play('wrong');
                     btn.style.background = '#ef476f';
@@ -353,8 +381,9 @@ const Game = {
                 setTimeout(() => {
                     this.round++;
                     this.nextQuestion();
-                }, 600);
+                }, 500);
             };
+
             btn.addEventListener('touchstart', selectAnswer, {passive:false});
             btn.addEventListener('click', selectAnswer);
             grid.appendChild(btn);
@@ -364,13 +393,21 @@ const Game = {
     },
 
     startTimer() {
-        this.timeLeft = 100;
         const bar = document.getElementById('timer-bar');
         clearInterval(this.timerInterval);
 
-        // Ajustar la velocidad según lo que el usuario haya seleccionado en el menú
-        // Nivel 1 = Muy Lento (resta 0.5 por tick), Nivel 2 = Normal (1), Nivel 3 = Rápido (2)
-        let decrement = 0.5;
+        // Modo Sin Tiempo (Opción 0)
+        if (this.speedLevel === 0) {
+            bar.style.width = '100%';
+            bar.style.background = '#06d6a0'; // Barra verde fija
+            return;
+        }
+
+        bar.style.background = '#ef476f';
+        this.timeLeft = 100;
+
+        // Velocidades: 1 (Muy Lento = 0.3/tick), 2 (Normal = 1.0/tick), 3 (Rápido = 2.0/tick)
+        let decrement = 0.3;
         if (this.speedLevel === 2) decrement = 1.0;
         if (this.speedLevel === 3) decrement = 2.0;
 
@@ -391,7 +428,7 @@ const Game = {
         document.getElementById('screen-game').classList.add('hidden');
         document.getElementById('screen-result').classList.remove('hidden');
         document.getElementById('res-titulo').innerText = "¡Concurso Terminado!";
-        document.getElementById('res-texto').innerText = `Has conseguido ${this.score} puntos. ¡Gran trabajo mental!`;
+        document.getElementById('res-texto').innerText = `Has conseguido ${this.score} puntos. ¡Buen trabajo!`;
 
         let st = Storage.load();
         st.points += this.score;
